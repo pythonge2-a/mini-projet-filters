@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.signal import TransferFunction
 
-
-class Lowpass:
+class Bessel_Lowpass:
 # Initialisation de la classe Lowpass avec les pôles de Bessel.
     def __init__(self):    
         self.BESSEL_TABLE = {
@@ -149,7 +148,7 @@ class Lowpass:
         combined_tf = TransferFunction(num_combined, den_combined)
         return combined_tf, stages
 
-class Highpass:
+class Bessel_Highpass:
     # Initialisation de la classe Lowpass avec les pôles de Bessel.
     def __init__(self):
         
