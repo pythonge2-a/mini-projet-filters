@@ -18,7 +18,6 @@ class Bessel_Lowpass:
         }
 # Retourne les valeurs de pulsation normalisée et de facteur de qualité pour un ordre donné.
     def bessel_q0_omega0(self, order):
-       
         if order not in self.BESSEL_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")
         return self.BESSEL_TABLE[order]
