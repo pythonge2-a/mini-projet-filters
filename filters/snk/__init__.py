@@ -16,8 +16,11 @@ for i, stage in enumerate(stages):
     print("Fonction de transfert :", stage['tf'])
     print("Paramètres :", stage['params'])
 '''
+'''
 lowpass = bt.Butterworth_LowPass()
 
 # Spécifier les résistances et calculer les condensateurs
-tf = lowpass.components(order=11,cutoff_frequency=10000000,c1=2.2e-6, c2=3e-3)
+resistance = [200]
+tf = lowpass.components(order=1,cutoff_frequency=20000,res_values=resistance)
 print("Fonction de transfert combinée :", tf)
+'''
