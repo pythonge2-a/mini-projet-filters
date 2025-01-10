@@ -3,7 +3,7 @@ import math
 
 class BandStopFilter:
     @staticmethod
-    def order_1_resonant_frequency(R, L):
+    def resonant_frequency_order_1(R, L):
         """
         Calculate the resonant frequency of a band-stop RL filter (order 1).
 
@@ -36,7 +36,7 @@ class BandStopFilter:
         return 1 / (2 * math.pi * math.sqrt(L * C))
 
     @staticmethod
-    def bandwidth_order_2(R, L, C):
+    def bandwidth(R, L, C):
         """
         Calculate the bandwidth of a band-stop RLC filter (order 2).
 
