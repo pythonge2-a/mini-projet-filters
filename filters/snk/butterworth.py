@@ -19,8 +19,10 @@ class Butterworth_LowPass:
 
     def components(self, order, cutoff_frequency, res_values=None, condo_values=None):
         r'''
-        Descr:
-        Cette fonction calcule les composants nécéssaires pour réaliser un filtre avec une fréquence de coupure choisis.
+        Cette fonction calcule les composants manquants pour réaliser le filtre voulu ainsi que ça fonction de transfert.
+
+        Pour les ordres impairs, les R1,C1 seront toujours les valeurs de composants du premier étage (1er ordre).
+        Pour les ordres pairs, les composants seront par paire de 2.
         '''
         # Verifie si l'ordre du filtre est dans le dictionnaire
         if order not in self.BUTTERWORTH_TABLE:
@@ -65,14 +67,17 @@ class Butterworth_LowPass:
             if res_values is not None:
                 if isinstance(res_values, (int,float)):
                     nbr_elements = len(res_values)
-                    if nbr_elements > order: 
-                        raise ValueError("Votre liste contient trop de résistances.") 
+                    if nbr_elements > order:
+                        raise ValueError(f"Votre liste contient trop de résistances.\n Inséré {nbr_elements} résistances dans votre liste.") 
                     elif nbr_elements < order:
-                        raise ValueError("Votre liste ne contient pas assez de résistances.")
+                        raise ValueError(f"Votre liste ne contient pas assez de résistances.\n Inséré {nbr_elements} résistances dans votre liste.")
                     else:
-                        '''Manque faire les calculs des composants'''
-                        None
+                        # Verifie si l'ordre est paire
+                        if order % 2 == 0:
+                            nbr_etages = order/2
+                        if order % 2 != 0:
+                            nbr_etages = order // 2 + 1
+                        # Calcul des composants
+
                 else:
                     raise ValueError("Veuillez insérer des valeurs valables.")
-
-
