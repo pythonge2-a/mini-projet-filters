@@ -1,308 +1,236 @@
 import numpy as np
-from scipy.signal import TransferFunction
+from scipy.signal import TransferFunction, bode
+import matplotlib.pyplot as plt
 
+class Highpasstchebychev:
+    """
+    Librairie pour calculer un filtre Tchebychev passe-haut d'ordre n
+    en utilisant la même table de pôles (omega0_norm, q0) que pour le passe-bas,
+    MAIS en appliquant la relation directe :
+        R1 (C1 + C2) = 1 / (Q * omega_HP)
+        R1 * R2 * C1 * C2 = 1 / (omega_HP^2)
+    pour la cellule d'ordre 2 (pas de discriminant).
+    """
 
-class Lowpass:
-# Initialisation de la classe Lowpass avec les pôles de Bessel.
     def __init__(self):
-        self.BESSEL_TABLE = {
-            1: [(1.0, 0.0)],
-            2: [(1.2723, 0.577)],
-            3: [(1.3225, 0.0), (1.4474, 0.691)],
-            4: [(1.431, 0.5219), (1.6043, 0.8055)],
-            5: [(1.5015, 0.0000), (1.5555, 0.5635), (1.7545, 0.9165)],
-            6: [(1.6030, 0.5103), (1.6882, 0.6112), (1.9037, 1.0233)],
-            7: [(1.6840, 0.0000), (1.7160, 0.5324), (1.8221, 0.6608), (2.0491, 1.0233)],
-            8: [(1.7772, 0.5060), (1.8308, 0.5596), (1.9518, 0.7109), (2.1872, 1.2257)],
-            9: [(1.8570, 0.0000), (1.8788, 0.5197), (1.9483, 0.5895), (2.0808, 0.7606), (2.3228, 1.3219)],
-           10: [(1.9412, 0.5039), (1.9790, 0.5376), (2.0606, 0.6205), (2.2021, 0.8098), (2.4487, 1.4153)],
+        # Table de pôles Tchebychev : (omega0_norm, q0) pour la version passe-bas
+        # On inversera la fréquence pour le passe-haut (omega_HP = (2*pi*fc)/omega0_norm).
+        self.TCHEBYCHEV_TABLE = {
+            1: [(1.9652, 0.0)],
+            2: [(1.0500, 0.9565)],
+            3: [(1.4942, 0.0), (0.9971, 2.0177)],
+            4: [(0.5286, 0.7845), (0.9932, 3.5590)],
+            5: [(0.2895, 0.0), (0.6552, 1.3988), (0.9941, 5.5564)],
+            6: [(0.3531, 0.7609), (0.7468, 2.1980), (0.9954, 8.0037)],
+            7: [(0.2054, 0.0), (0.4801, 1.2969), (0.8084, 3.1559), (0.9963, 10.8987)],
+            8: [(0.2651, 0.7530), (0.5828, 1.9565), (0.8506, 4.2661), (0.9971, 14.2405)],
+            9: [(0.1593, 0.0), (0.3773, 1.2600), (0.6622, 2.7129), (0.8806, 5.5266), (0.9976, 18.0286)],
+           10: [(0.2121, 0.7495), (0.4761, 1.8645), (0.7215, 3.5605), (0.9025, 6.9367), (0.9980, 22.2630)],
         }
-# Retourne les valeurs de pulsation normalisée et de facteur de qualité pour un ordre donné.
-    def bessel_q0_omega0(self, order):
 
-        if order not in self.BESSEL_TABLE:
+    def tchebychev_q0_omega0(self, order):
+        """Retourne la liste des pôles (omega0_norm, q0) pour un ordre donné."""
+        if order not in self.TCHEBYCHEV_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")
-        return self.BESSEL_TABLE[order]
-# Calcule un filtre passe-bas de premier ordre.
-    def first_order_lowpass(self, cutoff_freq, r=None, c=None, omega0_norm=None):
+        return self.TCHEBYCHEV_TABLE[order]
 
-        if omega0_norm is None:
-            omega0_norm = 1.0
-        omega0 = 2 * np.pi * cutoff_freq * omega0_norm
+    # -----------------------------------------------------------
+    # 1) Cellule 1er ordre passe-haut
+    # -----------------------------------------------------------
+    def first_order_highpass(self, cutoff_freq, R=None, C=None, omega0_norm=1.0):
+        """
+        Construit un filtre passe-haut de 1er ordre :
+           H_HP(s) = (s R C) / (1 + s R C).
+        On définit : omega_HP = (2*pi*cutoff_freq) / omega0_norm.
+        Puis, R*C = 1/omega_HP.
+        """
+        omega_hp = (2 * np.pi * cutoff_freq) / omega0_norm
 
-        if r is not None:
-            c = 1 / (omega0 * r)
-        elif c is not None:
-            r = 1 / (omega0 * c)
-        else:
-            raise ValueError("Fournir R ou C pour le calcul du premier ordre.")
+        # Calcul direct
+        if R is not None and C is None:
+            C = 1 / (omega_hp * R)
+        elif C is not None and R is None:
+            R = 1 / (omega_hp * C)
+        elif R is None and C is None:
+            raise ValueError("Fournir R ou C (1er ordre HP).")
 
-        num = [1]
-        den = [r * c, 1]
-        return TransferFunction(num, den), {"R": r, "C": c}
- # Calcule un filtre passe-bas de second ordre avec la cellule Sallen-Key.
-    def sallen_key_lowpass(self, order, cutoff_freq, r1=None, r2=None, c1=None, c2=None, omega0_norm=None, q0=None):
-        if order != 2:
-            raise ValueError("Seul l'ordre 2 est supporté pour Sallen-Key.")
+        num = [R*C, 0]
+        den = [R*C, 1]
+        tf = TransferFunction(num, den)
+        return tf, {"R": R, "C": C}
 
-        if omega0_norm is None or q0 is None:
-            raise ValueError("Omega0 et Q0 doivent être fournis.")
+    # -----------------------------------------------------------
+    # 2) Cellule 2e ordre passe-haut (approche directe)
+    # -----------------------------------------------------------
+    def sallen_key_highpass_direct(self, cutoff_freq, C1, C2, omega0_norm=1.0, q0=1.0):
+        """
+        Construit un filtre passe-haut de 2e ordre via Sallen–Key,
+        en utilisant les relations directes (sans discriminant) :
 
-        omega0 = 2 * np.pi * cutoff_freq * omega0_norm
+           1)  R1 (C1 + C2) = 1 / (Q * omega_HP)
+           2)  R1 R2 C1 C2  = 1 / (omega_HP^2)
 
-        if c1 is not None and c2 is not None:
-            r1_plus_r2 = 1 / (omega0 * c2 * q0)
-            r1_times_r2 = 1 / (omega0**2 * c1 * c2)
-            a = 1
-            b = -r1_plus_r2
-            c = r1_times_r2
-            discriminant = b**2 - 4 * a*c
-            if discriminant < 0:
-                raise ValueError("Les paramètres fournis pour C1 et C2 ne permettent pas un calcul valide de R1 et R2.")
-            r21 = (-b + np.sqrt(discriminant)) / 2
-            r22 = (-b - np.sqrt(discriminant)) / 2
-            r11 = r1_plus_r2 - r21
-            r12 = r1_plus_r2 - r22
+        => R1 = 1 / [ Q * omega_HP * (C1 + C2) ]
+           R2 = 1 / [ omega_HP^2 * C1 * C2 * R1 ]
 
-            num = [1]
-            den1 = [r11 * r21 * c1 * c2, (r11 + r21) * c2, 1]
-            den2 = [r12 * r22 * c1 * c2, (r12 + r22) * c2, 1]
+        La TF obtenue est :
+            H(s) = (s^2 R1 R2 C1 C2) / [ s^2 R1 R2 C1 C2 + s R1 (C1 + C2) + 1 ].
+        """
+        omega_hp = (2 * np.pi * cutoff_freq) / omega0_norm
 
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
+        # 1) Calcul de R1
+        denom_R1 = q0 * omega_hp * (C1 + C2)
+        if denom_R1 <= 0:
+            raise ValueError("Impossible de calculer R1 (dénominateur <= 0).")
+        R1 = 1 / denom_R1
 
-            return [
-                {"tf": tf1, "params": {"R1": r11, "R2": r21, "C1": c1, "C2": c2}},
-                {"tf": tf2, "params": {"R1": r12, "R2": r22, "C1": c1, "C2": c2}},
-            ]
-        elif r1 is not None and r2 is not None:
-            c2 = 1 / (omega0 * q0 * (r1 + r2))
-            c1 = 1 / (omega0**2 * r1 * r2 * c2)
-            if c1 <= 0 or c2 <= 0:
-                raise ValueError("Les paramètres fournis pour R1 et R2 ne permettent pas un calcul valide de C1 et C2.")
+        # 2) Calcul de R2
+        denom_R2 = (omega_hp**2) * C1 * C2 * R1
+        if denom_R2 <= 0:
+            raise ValueError("Impossible de calculer R2 (dénominateur <= 0).")
+        R2 = 1 / denom_R2
 
-            num = [1]
-            den = [r1 * r2 * c1 * c2, (r1 + r2) * c2, 1]
+        # 3) Construction de la FT
+        num = [R1*R2*C1*C2, 0, 0]
+        den = [R1*R2*C1*C2, R1*(C1 + C2), 1]
+        tf = TransferFunction(num, den)
 
-            tf = TransferFunction(num, den)
-            return [{"tf": tf, "params": {"R1": r1, "R2": r2, "C1": c1, "C2": c2}}]
-        else:
-            raise ValueError("Veuillez fournir soit (C1, C2), soit (R1, R2).")
+        return tf, {"R1": R1, "R2": R2, "C1": C1, "C2": C2}
 
-# Calcule un filtre passe-bas de n'importe quel ordre en utilisant des cellules en cascade.
-# Permet de choisir entre spécifier les résistances ou les condensateurs.
-    def multiple_order_lowpass(self, order, cutoff_freq, r_vals=None, c_vals=None):
-        if order not in self.BESSEL_TABLE:
-            raise ValueError(f"L'ordre {order} n'est pas supporté.")
+    # -----------------------------------------------------------
+    # 3) Conception d'un filtre d'ordre n (cascade)
+    # -----------------------------------------------------------
+    def design_filter(self, order, cutoff_freq, c_vals=None, r_vals=None):
+        """
+        Conception d'un filtre Tchebychev passe-haut d'ordre 'order'.
+        - On cascade (n//2) cellules d'ordre 2 et, si n est impair, 1 cellule d'ordre 1.
+        - On récupère pour chaque pôle (omega0_norm, q0).
+          * Si q0=0 => cellule d'ordre 1 (HP).
+          * Si q0!=0 => cellule d'ordre 2.
 
-        poles = self.bessel_q0_omega0(order)
-        stages = []
-        num_combined, den_combined = [1], [1]
+        On impose ci-dessous que, si c_vals est fourni, on l'utilise
+        pour chaque cellule d'ordre 2, et on calcule R1, R2 par la formule directe.
+        (Ou l'inverse pour la 1re ordre.)
 
-        # Calculer le nombre d'éléments nécessaires
-        num_stages = order // 2 + (order % 2)
-        num_elements = 2 * num_stages
+        c_vals et r_vals doivent avoir la longueur = order
+        si on veut imposer explicitement les compos (pas obligatoire).
+        """
+        poles = self.tchebychev_q0_omega0(order)
 
-        if r_vals is None and c_vals is None:
-            raise ValueError("Veuillez fournir soit les résistances (r_vals), soit les condensateurs (c_vals).")
+        # Vérif longueurs
+        if c_vals is not None and len(c_vals) != order:
+            raise ValueError(f"c_vals doit avoir exactement {order} éléments.")
+        if r_vals is not None and len(r_vals) != order:
+            raise ValueError(f"r_vals doit avoir exactement {order} éléments.")
 
-        if r_vals is None:
-            r_vals = [None] * num_elements
         if c_vals is None:
-            c_vals = [None] * num_elements
-
-        # Vérification de la longueur des listes
-        if len(r_vals) < num_elements:
-            r_vals.extend([None] * (num_elements - len(r_vals)))
-        if len(c_vals) < num_elements:
-            c_vals.extend([None] * (num_elements - len(c_vals)))
-
-        # Parcourir les pôles pour construire les étapes
-        for i, (omega0_norm, q0) in enumerate(poles):
-            if q0 == 0.0:  # Premier ordre
-                tf, params = self.first_order_lowpass(
-                    cutoff_freq, r=r_vals[i], c=c_vals[i], omega0_norm=omega0_norm
-                )
-            else:  # Deuxième ordre
-                idx = 2 * i
-                tf_data = self.sallen_key_lowpass(
-                    order=2,
-                    cutoff_freq=cutoff_freq,
-                    r1=r_vals[idx],
-                    r2=r_vals[idx + 1],
-                    c1=c_vals[idx],
-                    c2=c_vals[idx + 1],
-                    omega0_norm=omega0_norm,
-                    q0=q0,
-                )
-                tf = tf_data[0]["tf"]
-                params = tf_data[0]["params"]
-
-            # Mise à jour de la fonction de transfert combinée
-            num_combined = np.polymul(num_combined, tf.num)
-            den_combined = np.polymul(den_combined, tf.den)
-
-            # Ajouter les informations de l'étape
-            stages.append({"tf": tf, "params": params})
-
-        # Fonction de transfert combinée
-        combined_tf = TransferFunction(num_combined, den_combined)
-        return combined_tf, stages
-
-class Highpass:
-    # Initialisation de la classe Lowpass avec les pôles de Bessel.
-    def __init__(self):
-
-        self.BESSEL_TABLE = {
-            1: [(1.0, 0.0)],
-            2: [(1.2723, 0.577)],
-            3: [(1.3225, 0.0), (1.4474, 0.691)],
-            4: [(1.431, 0.5219), (1.6043, 0.8055)],
-            5: [(1.5015, 0.0000), (1.5555, 0.5635), (1.7545, 0.9165)],
-            6: [(1.6030, 0.5103), (1.6882, 0.6112), (1.9037, 1.0233)],
-            7: [(1.6840, 0.0000), (1.7160, 0.5324), (1.8221, 0.6608), (2.0491, 1.0233)],
-            8: [(1.7772, 0.5060), (1.8308, 0.5596), (1.9518, 0.7109), (2.1872, 1.2257)],
-            9: [(1.8570, 0.0000), (1.8788, 0.5197), (1.9483, 0.5895), (2.0808, 0.7606), (2.3228, 1.3219)],
-           10: [(1.9412, 0.5039), (1.9790, 0.5376), (2.0606, 0.6205), (2.2021, 0.8098), (2.4487, 1.4153)],
-        }
-# Retourne les valeurs de pulsation normalisée et de facteur de qualité pour un ordre donné.
-    def bessel_q0_omega0(self, order):
-
-        if order not in self.BESSEL_TABLE:
-            raise ValueError(f"L'ordre {order} n'est pas supporté.")
-        return self.BESSEL_TABLE[order]  # Retourne tous les pôles
-
-    def first_order_highpass(self, cutoff_freq, r=None, c=None, omega0_norm=None):
-        # Calcule un filtre du premier ordre.
-        omega0_norm_hp = 1 / omega0_norm
-        omega_c = 2 * np.pi * cutoff_freq * omega0_norm_hp
-
-        if r is not None:
-            c = 1 / (omega_c * r)
-        elif c is not None:
-            r = 1 / (omega_c * c)
-        else:
-            raise ValueError("Fournir R ou C.")
-
-        num = [1]
-        den = [r * c, 1]
-
-        return TransferFunction(num, den), {"R": r, "C": c}
-#Calcule la fonction de transfert Sallen-Key pour un filtre passe-haut Bessel.
-    def sallen_key_highpass(self, order, cutoff_freq, r1=None, r2=None, c1=None, c2=None, omega0_norm=None, q0=None):
-
-        omega0_norm_hp = 1 / omega0_norm
-        omega0 = 2 * np.pi * cutoff_freq * omega0_norm_hp
-
-        if r1 is not None and r2 is not None:
-            c1_plus_c2 = 1 / (omega0 * r1 * q0)
-            c1_times_c2 = 1 / (omega0**2 * r1 * r2)
-
-            a = 1
-            b = -c1_plus_c2
-            c = c1_times_c2
-            discriminant = b**2 - 4 * a * c
-
-            if discriminant < 0:
-                raise ValueError("Les paramètres fournis pour R1 et R2 ne permettent pas un calcul valide de C1 et C2.")
-
-            c21 = (-b + np.sqrt(discriminant)) / (2 * a)
-            c22 = (-b - np.sqrt(discriminant)) / (2 * a)
-            c11 = c1_plus_c2 - c21
-            c12 = c1_plus_c2 - c22
-
-            num = [1]
-            den1 = [r1 * r2 * c11 * c21, (r1 * c11 + r1 * c21), 1]
-            den2 = [r1 * r2 * c12 * c22, (r1 * c12 + r1 * c22), 1]
-
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
-
-            return [
-                {"tf": tf1, "params": {"R1": r1, "R2": r2, "C1": c11, "C2": c21}},
-                {"tf": tf2, "params": {"R1": r1, "R2": r2, "C1": c12, "C2": c22}},
-            ]
-
-        elif c1 is not None and c2 is not None:
-            r1_plus_r2 = 1 / (omega0 * c2 * q0)
-            r1_times_r2 = 1 / (omega0**2 * c1 * c2)
-
-            a = 1
-            b = -r1_plus_r2
-            c = r1_times_r2
-            discriminant = b**2 - 4 * a * c
-
-            if discriminant < 0:
-                raise ValueError("Les paramètres fournis pour C1 et C2 ne permettent pas un calcul valide de R1 et R2.")
-
-            r21 = (-b + np.sqrt(discriminant)) / (2 * a)
-            r22 = (-b - np.sqrt(discriminant)) / (2 * a)
-            r11 = r1_plus_r2 - r21
-            r12 = r1_plus_r2 - r22
-
-            num = [1]
-            den1 = [r11 * r21 * c1 * c2, (r11 * c1 + r21 * c2), 1]
-            den2 = [r12 * r22 * c1 * c2, (r12 * c1 + r22 * c2), 1]
-
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
-
-            return [
-                {"tf": tf1, "params": {"R1": r11, "R2": r21, "C1": c1, "C2": c2}},
-                {"tf": tf2, "params": {"R1": r12, "R2": r22, "C1": c1, "C2": c2}},
-            ]
-
-        else:
-            raise ValueError("Veuillez fournir soit (R1, R2), soit (C1, C2).")
-
-# Calcule un filtre passe-haut de n'importe quel ordre en utilisant des cellules en cascade.
-    def multiple_order_highpass(self, order, cutoff_freq, r_vals=None, c_vals=None):
-
-        if order not in self.BESSEL_TABLE:
-            raise ValueError(f"L'ordre {order} n'est pas supporté.")
-
-        poles = self.bessel_q0_omega0(order)
-        stages = []
-        num_combined, den_combined = [1], [1]
-
-        num_stages = order // 2 + (order % 2)
-        num_elements = 2 * num_stages
-
+            c_vals = [None]*order
         if r_vals is None:
-            r_vals = [None] * num_elements
-        if c_vals is None:
-            c_vals = [None] * num_elements
+            r_vals = [None]*order
 
-        if len(r_vals) < num_elements:
-            r_vals.extend([None] * (num_elements - len(r_vals)))
-        if len(c_vals) < num_elements:
-            c_vals.extend([None] * (num_elements - len(c_vals)))
+        num_combined = [1.]
+        den_combined = [1.]
+        stages = []
+        idx = 0
 
-        for i, (omega0_norm, q0) in enumerate(poles):
+        for (omega0_norm, q0) in poles:
             if q0 == 0.0:
-                tf, params = self.first_order_highpass(
-                    cutoff_freq, r=r_vals[i], c=c_vals[i], omega0_norm=omega0_norm
+                # ---- 1er ordre HP ----
+                tf1, params1 = self.first_order_highpass(
+                    cutoff_freq,
+                    R=r_vals[idx],   # si imposé
+                    C=c_vals[idx],   # si imposé
+                    omega0_norm=omega0_norm
                 )
-            else:
-                idx = 2 * i
-                tf_data = self.sallen_key_highpass(
-                    order=2,
-                    cutoff_freq=cutoff_freq,
-                    r1=r_vals[idx],
-                    r2=r_vals[idx + 1],
-                    c1=c_vals[idx],
-                    c2=c_vals[idx + 1],
-                    omega0_norm=omega0_norm,
-                    q0=q0,
-                )
-                tf = tf_data[0]["tf"]
-                params = tf_data[0]["params"]
+                idx += 1
+                stages.append({"tf": tf1, "params": params1})
+                num_combined = np.polymul(num_combined, tf1.num)
+                den_combined = np.polymul(den_combined, tf1.den)
 
-            num_combined = np.polymul(num_combined, tf.num)
-            den_combined = np.polymul(den_combined, tf.den)
-            stages.append({"tf": tf, "params": params})
+            else:
+                # ---- 2e ordre HP ----
+                # On va APPLIQUER LA FORMULE DIRECTE:
+                #    R1 (C1 + C2) = 1/(Q * omega_HP)
+                #    R1 R2 C1 C2 = 1/(omega_HP^2)
+                #
+                # Suppose qu'on fixe c_vals[idx], c_vals[idx+1]
+                # et qu'on calcule R1, R2 par la sallen_key_highpass_direct.
+                #
+                # c_vals[idx], c_vals[idx+1] -> C1, C2
+                c1, c2 = c_vals[idx], c_vals[idx+1]
+                idx += 2
+
+                if (c1 is None) or (c2 is None):
+                    raise ValueError("Pour la cellule d'ordre 2, il faut C1 et C2 (sinon impossible).")
+
+                # Appel direct
+                tf2, params2 = self.sallen_key_highpass_direct(
+                    cutoff_freq,
+                    c1, c2,
+                    omega0_norm=omega0_norm,
+                    q0=q0
+                )
+                stages.append({"tf": tf2, "params": params2})
+                num_combined = np.polymul(num_combined, tf2.num)
+                den_combined = np.polymul(den_combined, tf2.den)
 
         combined_tf = TransferFunction(num_combined, den_combined)
         return combined_tf, stages
 
 
+# -----------------------------------------------------------------------
+# Exemple d’utilisation
+if __name__ == "__main__":
+    # Filtre Tchebychev passe-haut d'ordre 4, Fc = 2.5 kHz
+    order = 4
+    fc = 2.5e3
+
+    # On fixe 4 condensateurs => (1er ordre : 1 condo, 2ᵉ ordre : 2 condos, etc.)
+    # ex. 10nF, 10nF, 10nF, 5nF
+    # => la 1ʳᵉ cellule a q=0 => 1er ordre => c_vals[0] = 10nF
+    # => la 2ʳᵉ cellule a q!=0 => c_vals[1], c_vals[2], c_vals[3], etc.
+    #
+    # Mais pour un ordre 4 Tchebychev, on a 2 pôles => chacun q != 0
+    # => En réalité, selon votre table, vérifiez s'il y a un pôle q=0.
+    # => S'il n'y en a pas, on aura DEUX cellules d'ordre 2 => on a besoin de 4 condos total.
+    #
+    # Pour simplifier, on indique 4 valeurs :
+    c_vals = [10e-9, 10e-9, 10e-9, 5e-9]
+
+    # On ne spécifie pas R => le code va calculer R1, R2 par la relation directe.
+    r_vals = None
+
+    hp_filter = Highpasstchebychev()
+    tf_hp, stages_info = hp_filter.design_filter(
+        order=order,
+        cutoff_freq=fc,
+        c_vals=c_vals,
+        r_vals=r_vals
+    )
+
+    print("=== STAGES INFO ===")
+    for i, st in enumerate(stages_info, start=1):
+        print(f"Cellule {i}: {st['params']}")
+
+    print("\n=== FONCTION DE TRANSFERT GLOBALE ===")
+    print("Num =", tf_hp.num)
+    print("Den =", tf_hp.den)
+
+    # Bode plot
+    w = np.logspace(2, 6, 500)
+    w, mag, phase = bode(tf_hp, w=w)
+    freq_hz = w / (2*np.pi)
+
+    fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    ax_mag.semilogx(freq_hz, mag, 'b')
+    ax_mag.set_ylabel('Magnitude (dB)')
+    ax_mag.set_title(f'Tchebychev HP ordre={order} - Fc={fc/1e3} kHz (Relation directe)')
+
+    ax_phase.semilogx(freq_hz, phase, 'r')
+    ax_phase.set_xlabel('Fréquence (Hz)')
+    ax_phase.set_ylabel('Phase (deg)')
+    ax_phase.grid(True)
+    ax_mag.grid(True)
+
+    plt.tight_layout()
+    plt.show()
