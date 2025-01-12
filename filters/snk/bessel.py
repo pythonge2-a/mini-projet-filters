@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import TransferFunction
-
-class Bessel_Lowpass:
+import matplotlib.pyplot as plt
+class lowpass:
 # Initialisation de la classe Lowpass avec les pôles de Bessel.
     def __init__(self):    
         self.BESSEL_TABLE = {
@@ -36,7 +36,7 @@ class Bessel_Lowpass:
             raise ValueError("Fournir R ou C pour le calcul du premier ordre.")
 
         num = [1]
-        den = [r * c, 1]
+        den = [1,r * c]
         return TransferFunction(num, den), {"R": r, "C": c}
  # Calcule un filtre passe-bas de second ordre avec la cellule Sallen-Key.
     def sallen_key_lowpass(self, order, cutoff_freq, r1=None, r2=None, c1=None, c2=None, omega0_norm=None, q0=None):
@@ -62,9 +62,9 @@ class Bessel_Lowpass:
             r11 = r1_plus_r2 - r21
             r12 = r1_plus_r2 - r22
 
-            num = [1]
-            den1 = [r11 * r21 * c1 * c2, (r11 + r21) * c2, 1]
-            den2 = [r12 * r22 * c1 * c2, (r12 + r22) * c2, 1]
+            num = [1,0,0]
+            den1 = [1,(r11 + r21) * c2,r11 * r21 * c1 * c2]
+            den2 = [1,(r12 + r22) * c2,r12 * r22 * c1 * c2]
 
             tf1 = TransferFunction(num, den1)
             tf2 = TransferFunction(num, den2)
@@ -79,8 +79,8 @@ class Bessel_Lowpass:
             if c1 <= 0 or c2 <= 0:
                 raise ValueError("Les paramètres fournis pour R1 et R2 ne permettent pas un calcul valide de C1 et C2.")
 
-            num = [1]
-            den = [r1 * r2 * c1 * c2, (r1 + r2) * c2, 1]
+            num = [1,0,0]
+            den = [1,(r1 + r2) * c2,r1 * r2 * c1 * c2]
 
             tf = TransferFunction(num, den)
             return [{"tf": tf, "params": {"R1": r1, "R2": r2, "C1": c1, "C2": c2}}]
@@ -146,8 +146,34 @@ class Bessel_Lowpass:
         # Fonction de transfert combinée
         combined_tf = TransferFunction(num_combined, den_combined)
         return combined_tf, stages
+        # Affiche le diagramme de Bode pour un filtre donné.
+    def graphs(self, order, cutoff_freq, r_vals=None, c_vals=None):
+        combined_tf, _ = self.multiple_order_lowpass(order, cutoff_freq, r_vals, c_vals)
+        print(combined_tf)
+       # omega = np.logspace(np.log10(cutoff_freq / 10), np.log10(cutoff_freq * 10), 500)
+        w, mag, phase = combined_tf.bode()
+        
+        plt.figure(figsize=(12, 6))
 
-class Bessel_Highpass:
+        # Magnitude
+        plt.subplot(2, 1, 1)
+        plt.semilogx(w, mag)
+        plt.title("Diagramme de Bode - Gain")
+        plt.ylabel("Gain (dB)")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+        # Phase
+        plt.subplot(2, 1, 2)
+        plt.semilogx(w, phase)
+        plt.title("Diagramme de Bode - Phase")
+        plt.xlabel("Pulsation (rad/s)")
+        plt.ylabel("Phase (degrés)")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+        plt.tight_layout()
+        plt.show()
+
+class highpass:
     # Initialisation de la classe Lowpass avec les pôles de Bessel.
     def __init__(self):
         
@@ -181,15 +207,17 @@ class Bessel_Highpass:
             r = 1 / (omega_c * c)
         else:
             raise ValueError("Fournir R ou C.")
-
+        re = r*c
         num = [1]
-        den = [r * c, 1]
+        den = [1,re]
+        print(den)
 
         return TransferFunction(num, den), {"R": r, "C": c}
 #Calcule la fonction de transfert Sallen-Key pour un filtre passe-haut Bessel. 
     def sallen_key_highpass(self, order, cutoff_freq, r1=None, r2=None, c1=None, c2=None, omega0_norm=None, q0=None):
 
         omega0_norm_hp = 1 / omega0_norm
+        print(omega0_norm_hp)
         omega0 = 2 * np.pi * cutoff_freq * omega0_norm_hp
 
         if r1 is not None and r2 is not None:
@@ -209,12 +237,13 @@ class Bessel_Highpass:
             c11 = c1_plus_c2 - c21
             c12 = c1_plus_c2 - c22
 
-            num = [1]
-            den1 = [r1 * r2 * c11 * c21, (r1 * c11 + r1 * c21), 1]
-            den2 = [r1 * r2 * c12 * c22, (r1 * c12 + r1 * c22), 1]
+            num1 = [0,0,r1 * r2 * c11 * c21,]
+            num2 = [0,0,r1 * r2 * c12 * c22]
+            den1 = [1,(r1 * c11 + r1 * c21),r1 * r2 * c11 * c21]
+            den2 = [1,(r1 * c12 + r1 * c22),r1 * r2 * c12 * c22]
 
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
+            tf1 = TransferFunction(num1, den1)
+            tf2 = TransferFunction(num2, den2)
 
             return [
                 {"tf": tf1, "params": {"R1": r1, "R2": r2, "C1": c11, "C2": c21}},
@@ -222,32 +251,17 @@ class Bessel_Highpass:
             ]
 
         elif c1 is not None and c2 is not None:
-            r1_plus_r2 = 1 / (omega0 * c2 * q0)
-            r1_times_r2 = 1 / (omega0**2 * c1 * c2)
+            r1 = 1 / (omega0 * q0 * (c1 + c2))
+            r2 = 1 / (omega0**2 * r1 * c1 * c2)
+            print(q0)
+            print(omega0)
 
-            a = 1
-            b = -r1_plus_r2
-            c = r1_times_r2
-            discriminant = b**2 - 4 * a * c
+            num = [0,0,r1 * r2 * c1 * c2]
+            den = [1,(r1 * c1 + r1 * c2), r1 * r2 * c1 * c2]
 
-            if discriminant < 0:
-                raise ValueError("Les paramètres fournis pour C1 et C2 ne permettent pas un calcul valide de R1 et R2.")
-
-            r21 = (-b + np.sqrt(discriminant)) / (2 * a)
-            r22 = (-b - np.sqrt(discriminant)) / (2 * a)
-            r11 = r1_plus_r2 - r21
-            r12 = r1_plus_r2 - r22
-
-            num = [1]
-            den1 = [r11 * r21 * c1 * c2, (r11 * c1 + r21 * c2), 1]
-            den2 = [r12 * r22 * c1 * c2, (r12 * c1 + r22 * c2), 1]
-
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
-
+            tf = TransferFunction(num, den)
             return [
-                {"tf": tf1, "params": {"R1": r11, "R2": r21, "C1": c1, "C2": c2}},
-                {"tf": tf2, "params": {"R1": r12, "R2": r22, "C1": c1, "C2": c2}},
+                {"tf": tf, "params": {"R1": r1, "R2": r2, "C1": c1, "C2": c2}},
             ]
 
         else:
@@ -295,12 +309,43 @@ class Bessel_Highpass:
                 )
                 tf = tf_data[0]["tf"]
                 params = tf_data[0]["params"]
+                print(tf)
+               
 
             num_combined = np.polymul(num_combined, tf.num)
+            print(num_combined)
             den_combined = np.polymul(den_combined, tf.den)
+            print(den_combined)
             stages.append({"tf": tf, "params": params})
 
         combined_tf = TransferFunction(num_combined, den_combined)
+        print(combined_tf)
         return combined_tf, stages
+    def graphs(self, order, cutoff_freq, r_vals=None, c_vals=None):
+        combined_tf, _ = self.multiple_order_highpass(order, cutoff_freq, r_vals, c_vals)
+     #  omega = np.logspace(np.log10(cutoff_freq / 10), np.log10(cutoff_freq * 10), 500)
+        
+        # Calculer la réponse en fréquence
+        w, mag, phase = combined_tf.bode()
+
+        plt.figure(figsize=(12, 6))
+
+        # Diagramme de gain
+        plt.subplot(2, 1, 1)
+        plt.semilogx(w, mag)
+        plt.title("Diagramme de Bode - Gain")
+        plt.ylabel("Gain (dB)")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+        # Diagramme de phase
+        plt.subplot(2, 1, 2)
+        plt.semilogx(w, phase)
+        plt.title("Diagramme de Bode - Phase")
+        plt.xlabel("Pulsation (rad/s)")
+        plt.ylabel("Phase (degrés)")
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+        plt.tight_layout()
+        plt.show()
 
 

@@ -2,6 +2,23 @@ import math
 
 class BandPassFilter:
     @staticmethod
+    def order_1_resonant_frequency(R, L):
+        """
+        Calculate the resonant frequency of a band-pass RLC filter order 1.
+
+        Parameters:
+            R (float): Resistance in ohms.
+            C (float): Capacitance in farads.
+
+        Returns:
+            float: Resonant frequency in Hz.
+        """
+        if L == 0 or R == 0:
+            raise ValueError("Inductance and resistance must be non-zero.")
+        return R / (2 * math.pi * L)
+
+    #The following code is for a Band Pass Filter of order 2
+    @staticmethod
     def resonant_frequency(L, C):
         """
         Calculate the resonant frequency of a band-pass RLC filter.

@@ -1,38 +1,86 @@
 import math
 
+
 class LowPassFilter:
     @staticmethod
-    def cutoff_frequency_order_1(R, C):
+    def cutoff_frequency_rc(R, C):
         """
-        Calculate the cutoff frequency of a low-pass RLC filter order 1.
+        Calculate the cutoff frequency of a high-pass RC filter.
 
         Parameters:
-        R (float): Resistance
-        C (float): Capacitance
+            R (float): Resistance in ohms.
+            C (float): Capacitance in farads.
 
-        Return:
-        float: Cutoff frequency
+        Returns:
+            float: Cutoff frequency in Hz.
         """
-
-        if C <= 0 or R <= 0:
-            raise ValueError("Capacitance and resistance must be positive.")
+        if R <= 0 or C <= 0:
+            raise ValueError("Resistance and capacitance must be greater than zero.")
         return 1 / (2 * math.pi * R * C)
 
     @staticmethod
-    def cutoff_frequency_order_2(R1, R2, C1, C2):
+    def cutoff_frequency_rl(R, L):
         """
-        Calculate the cutoff frequency of a low-pass RLC filter order 2.
+        Calculate the cutoff frequency of a high-pass RL filter.
 
         Parameters:
-        R1 (float): Resistance 1
-        R2 (float): Resistance 1
-        C1 (float): Capacitance 1
-        C2 (float): Capacitance 2
+            R (float): Resistance in ohms.
+            L (float): Inductance in henries.
 
-        Return:
-        float: Cutoff frequency
+        Returns:
+            float: Cutoff frequency in Hz.
         """
+        if R <= 0 or L <= 0:
+            raise ValueError("Resistance and inductance must be greater than zero.")
+        return R / (2 * math.pi * L)
 
-        if R1 <= 0 or R2 <= 0 or C1 <= 0 or C2 <= 0:
-            raise ValueError("Resistances and capacitances must be positive.")
-        return 1 / (2 * math.pi * math.sqrt(R1 * R2 * C1 * C2))
+    @staticmethod
+    def cutoff_frequency_rlc(L, C):
+        """
+        Calculate the cutoff frequency of a high-pass RLC filter.
+
+        Parameters:
+            L (float): Inductance in henries.
+            C (float): Capacitance in farads.
+
+        Returns:
+            float: Cutoff frequency in Hz.
+        """
+        if L <= 0 or C <= 0:
+            raise ValueError("Inductance and capacitance must be greater than zero.")
+        return 1 / (2 * math.pi * math.sqrt(L * C))
+
+    @staticmethod
+    def quality_factor(R, L, C):
+        """
+        Calculate the quality factor of a high-pass RLC filter.
+
+        Parameters:
+            R (float): Resistance in ohms.
+            L (float): Inductance in henries.
+            C (float): Capacitance in farads.
+
+        Returns:
+            float: Quality factor (unitless).
+        """
+        if R <= 0 or L <= 0 or C <= 0:
+            raise ValueError(
+                "Resistance, inductance, and capacitance must be greater than zero."
+            )
+        return math.sqrt(L / C) / R
+
+    @staticmethod
+    def bandwidth(cutoff_frequency, quality_factor):
+        """
+        Calculate the bandwidth of a high-pass RLC filter.
+
+        Parameters:
+            cutoff_frequency (float): Cutoff frequency in Hz.
+            quality_factor (float): Quality factor (unitless).
+
+        Returns:
+            float: Bandwidth in Hz.
+        """
+        if quality_factor <= 0:
+            raise ValueError("Quality factor must be greater than zero.")
+        return cutoff_frequency / quality_factor
