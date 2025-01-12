@@ -17,13 +17,67 @@ class Butterworth_LowPass:
            10: [(0.5062), (0.5612), (0.7071), (1.1013), (3.1962)],
         }
 
-    def components(self, order, cutoff_frequency=None, res_values=None, cond_values=None):
+    def components(self, order, cutoff_frequency, res_values=None, condo_values=None):
+        r'''
+        Cette fonction calcule les composants manquants pour réaliser le filtre voulu ainsi que ça fonction de transfert.
+
+        Pour les ordres impairs, les R1,C1 seront toujours les valeurs de composants du premier étage (1er ordre).
+        Pour les ordres pairs, les composants seront par paire de 2.
         '''
-        res_values et cond_values sont des listes de composants car a partir d'order 2 il y aura toujours plus de composants
-        '''
-        # Verifie si l'ordre du filtre est entre 1 et 10
+        # Verifie si l'ordre du filtre est dans le dictionnaire
         if order not in self.BUTTERWORTH_TABLE:
-            raise ValueError(f"L'ordre {order} n'est pas supporté.")    
-        
+            raise ValueError(f"L'ordre {order} n'est pas supporté.")   
         quality_Q0 = self.BUTTERWORTH_TABLE[order][0]
-        
+
+        if cutoff_frequency is None:
+            raise ValueError("Veuillez fournir une fréquence de coupure.")
+        pulsation_W0 = 2 * np.pi * cutoff_frequency
+
+        if order == 1:
+            if res_values is not None:
+                # Verifie que l'entrée est du type int ou float
+                if isinstance(res_values[0], (int, float)):
+                    # Verifie que la liste ne contient qu'1 seul élément
+                    nbr_elements = len(res_values)
+                    if nbr_elements > 2:
+                        raise ValueError("Pour le 1er ordre veuillez mettre qu'une seule résistance.")
+                    condo_values = 1/(pulsation_W0 * res_values[0])
+                    num = [1]
+                    den = [res_values[0] * condo_values, 1]
+                    return TransferFunction(num, den), {"R": res_values[0], "C": condo_values} 
+                else:
+                    raise ValueError("Veuillez insérer une valeur de résistance valable.")
+            elif condo_values is not None:
+                # Verifie que l'entrée est du type int ou float
+                if isinstance(condo_values[0], (int,float)):
+                    nbr_elements = len(condo_values)
+                    # Verifie que la liste ne contient qu'1 seul élément
+                    if nbr_elements > 2:
+                        raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
+                    res_values = 1/(pulsation_W0 * condo_values[0])
+                    num = [1]
+                    den = [condo_values[0] * res_values, 1]
+                    return TransferFunction(num, den), {"R": res_values, "C": condo_values[0]}
+                else:
+                    raise ValueError("Veuillez insérer une valeur valable.")
+            else:
+                raise KeyError("Veuillez au moin insérer une liste de composants.")
+            
+        if order >= 2:
+            if res_values is not None:
+                if isinstance(res_values, (int,float)):
+                    nbr_elements = len(res_values)
+                    if nbr_elements > order:
+                        raise ValueError(f"Votre liste contient trop de résistances.\n Inséré {nbr_elements} résistances dans votre liste.") 
+                    elif nbr_elements < order:
+                        raise ValueError(f"Votre liste ne contient pas assez de résistances.\n Inséré {nbr_elements} résistances dans votre liste.")
+                    else:
+                        # Verifie si l'ordre est paire
+                        if order % 2 == 0:
+                            nbr_etages = order/2
+                        if order % 2 != 0:
+                            nbr_etages = order // 2 + 1
+                        # Calcul des composants
+
+                else:
+                    raise ValueError("Veuillez insérer des valeurs valables.")

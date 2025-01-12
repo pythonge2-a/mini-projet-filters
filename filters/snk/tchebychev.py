@@ -1,168 +1,236 @@
-import math
+import numpy as np
+from scipy.signal import TransferFunction, bode
+import matplotlib.pyplot as plt
 
+class Highpasstchebychev:
+    """
+    Librairie pour calculer un filtre Tchebychev passe-haut d'ordre n
+    en utilisant la même table de pôles (omega0_norm, q0) que pour le passe-bas,
+    MAIS en appliquant la relation directe :
+        R1 (C1 + C2) = 1 / (Q * omega_HP)
+        R1 * R2 * C1 * C2 = 1 / (omega_HP^2)
+    pour la cellule d'ordre 2 (pas de discriminant).
+    """
 
-class FilterBase:
-    """Base pour les filtres Sallen-Key."""
+    def __init__(self):
+        # Table de pôles Tchebychev : (omega0_norm, q0) pour la version passe-bas
+        # On inversera la fréquence pour le passe-haut (omega_HP = (2*pi*fc)/omega0_norm).
+        self.TCHEBYCHEV_TABLE = {
+            1: [(1.9652, 0.0)],
+            2: [(1.0500, 0.9565)],
+            3: [(1.4942, 0.0), (0.9971, 2.0177)],
+            4: [(0.5286, 0.7845), (0.9932, 3.5590)],
+            5: [(0.2895, 0.0), (0.6552, 1.3988), (0.9941, 5.5564)],
+            6: [(0.3531, 0.7609), (0.7468, 2.1980), (0.9954, 8.0037)],
+            7: [(0.2054, 0.0), (0.4801, 1.2969), (0.8084, 3.1559), (0.9963, 10.8987)],
+            8: [(0.2651, 0.7530), (0.5828, 1.9565), (0.8506, 4.2661), (0.9971, 14.2405)],
+            9: [(0.1593, 0.0), (0.3773, 1.2600), (0.6622, 2.7129), (0.8806, 5.5266), (0.9976, 18.0286)],
+           10: [(0.2121, 0.7495), (0.4761, 1.8645), (0.7215, 3.5605), (0.9025, 6.9367), (0.9980, 22.2630)],
+        }
 
-    # Table des paramètres pour Tchebychev 1 dB
-    FILTER_PARAMS = {
-    "Tchebychev (r=1dB)": {
-        1: [(1.9652, None)],  # Une seule cellule d'ordre 1, pas de Qk nécessaire
-        2: [(1.0500, 0.9565)],
-        3: [(0.4942, None), (0.9971, 2.0177)],  # Une cellule d'ordre 1 et une cellule d'ordre 2
-        4: [(0.5286, 0.7845), (0.9932, 3.5590)],
-        5: [(0.2895, None), (0.6552, 1.3988), (0.9941, 5.5564)],  # Une cellule d'ordre 1 et deux cellules d'ordre 2
-        6: [(0.3531, 0.7609), (0.7468, 2.1980), (0.9954, 8.0037)],
-        7: [(0.2054, None), (0.4801, 1.2969), (0.8084, 3.1559), (0.9963, 10.8987)],
-        8: [(0.2651, 0.7530), (0.5828, 1.9565), (0.8506, 4.2661), (0.9971, 14.2405)],
-        9: [(0.1593, None), (0.3773, 1.2600), (0.6622, 2.7129), (0.8806, 5.5266), (0.9976, 18.0286)],
-        10: [(0.2121, 0.7495), (0.4761, 1.8645), (0.7215, 3.5605), (0.9025, 6.9367), (0.9980, 22.2630)],
-    },
-}
+    def tchebychev_q0_omega0(self, order):
+        """Retourne la liste des pôles (omega0_norm, q0) pour un ordre donné."""
+        if order not in self.TCHEBYCHEV_TABLE:
+            raise ValueError(f"L'ordre {order} n'est pas supporté.")
+        return self.TCHEBYCHEV_TABLE[order]
 
-    @staticmethod
-    def get_params(filter_type, order, mode):
-        """Récupère les paramètres du filtre et ajuste selon le mode."""
-        if filter_type not in FilterBase.FILTER_PARAMS:
-            raise ValueError(f"Type de filtre non supporté : {filter_type}")
-        if order not in FilterBase.FILTER_PARAMS[filter_type]:
-            raise ValueError(f"Ordre {order} non supporté pour le filtre {filter_type}")
-
-        params = FilterBase.FILTER_PARAMS[filter_type][order]
-
-        # Ajustement des wk/wr pour passe-haut (1 / wk/wr)
-        adjusted_params = []
-        for wk_wr, qk in params:
-            original_wk_wr = wk_wr
-            if mode == "hp" and wk_wr is not None:
-                wk_wr = 1 / wk_wr
-            adjusted_params.append((wk_wr, qk, original_wk_wr))  # Inclut l'original pour affichage
-        return adjusted_params
-
-    @staticmethod
-    def calculate_resistances(f, capacitors, params, order):
+    # -----------------------------------------------------------
+    # 1) Cellule 1er ordre passe-haut
+    # -----------------------------------------------------------
+    def first_order_highpass(self, cutoff_freq, R=None, C=None, omega0_norm=1.0):
         """
-        Calcule les résistances pour un filtre de Sallen-Key pour un ordre donné.
-        Gère les ordres pairs et impairs.
+        Construit un filtre passe-haut de 1er ordre :
+           H_HP(s) = (s R C) / (1 + s R C).
+        On définit : omega_HP = (2*pi*cutoff_freq) / omega0_norm.
+        Puis, R*C = 1/omega_HP.
         """
-        resistances = {}
-        num_cells = len(params)  # Chaque cellule d'ordre 2 a un jeu de (wk/wr, Q)
-        capacitor_index = 0  # Index des condensateurs utilisés
+        omega_hp = (2 * np.pi * cutoff_freq) / omega0_norm
 
-        print("\n--- Détails des calculs pour chaque cellule ---")
-        for i, (wk_wr, q, original_wk_wr) in enumerate(params):
-            if q is not None:  # Cellule d'ordre 2
-                try:
-                    c1, c2 = capacitors[capacitor_index], capacitors[capacitor_index + 1]
-                except IndexError:
-                    raise ValueError(
-                        f"La liste des condensateurs est trop courte pour l'ordre {order}. "
-                        f"Au moins {2 * num_cells} condensateurs sont nécessaires."
-                    )
-                capacitor_index += 2
-                w = wk_wr * f * 2 * math.pi
+        # Calcul direct
+        if R is not None and C is None:
+            C = 1 / (omega_hp * R)
+        elif C is not None and R is None:
+            R = 1 / (omega_hp * C)
+        elif R is None and C is None:
+            raise ValueError("Fournir R ou C (1er ordre HP).")
 
-                r1 = 1 / (q * w * (c1 + c2))
-                r2 = 1 / (w**2 * c1 * c2 * r1)
+        num = [R*C, 0]
+        den = [R*C, 1]
+        tf = TransferFunction(num, den)
+        return tf, {"R": R, "C": C}
 
-                resistances[f"R{2 * i + 1}"] = r1
-                resistances[f"R{2 * i + 2}"] = r2
+    # -----------------------------------------------------------
+    # 2) Cellule 2e ordre passe-haut (approche directe)
+    # -----------------------------------------------------------
+    def sallen_key_highpass_direct(self, cutoff_freq, C1, C2, omega0_norm=1.0, q0=1.0):
+        """
+        Construit un filtre passe-haut de 2e ordre via Sallen–Key,
+        en utilisant les relations directes (sans discriminant) :
 
-                print(
-                    f"Cellule {i + 1} (ordre 2) : original wk/wr={original_wk_wr:.4f}, utilisé wk/wr={wk_wr:.4f}, "
-                    f"Q={q:.4f}, C1={c1:.1e}, C2={c2:.1e}, R1={r1:.1f}, R2={r2:.1f}"
+           1)  R1 (C1 + C2) = 1 / (Q * omega_HP)
+           2)  R1 R2 C1 C2  = 1 / (omega_HP^2)
+
+        => R1 = 1 / [ Q * omega_HP * (C1 + C2) ]
+           R2 = 1 / [ omega_HP^2 * C1 * C2 * R1 ]
+
+        La TF obtenue est :
+            H(s) = (s^2 R1 R2 C1 C2) / [ s^2 R1 R2 C1 C2 + s R1 (C1 + C2) + 1 ].
+        """
+        omega_hp = (2 * np.pi * cutoff_freq) / omega0_norm
+
+        # 1) Calcul de R1
+        denom_R1 = q0 * omega_hp * (C1 + C2)
+        if denom_R1 <= 0:
+            raise ValueError("Impossible de calculer R1 (dénominateur <= 0).")
+        R1 = 1 / denom_R1
+
+        # 2) Calcul de R2
+        denom_R2 = (omega_hp**2) * C1 * C2 * R1
+        if denom_R2 <= 0:
+            raise ValueError("Impossible de calculer R2 (dénominateur <= 0).")
+        R2 = 1 / denom_R2
+
+        # 3) Construction de la FT
+        num = [R1*R2*C1*C2, 0, 0]
+        den = [R1*R2*C1*C2, R1*(C1 + C2), 1]
+        tf = TransferFunction(num, den)
+
+        return tf, {"R1": R1, "R2": R2, "C1": C1, "C2": C2}
+
+    # -----------------------------------------------------------
+    # 3) Conception d'un filtre d'ordre n (cascade)
+    # -----------------------------------------------------------
+    def design_filter(self, order, cutoff_freq, c_vals=None, r_vals=None):
+        """
+        Conception d'un filtre Tchebychev passe-haut d'ordre 'order'.
+        - On cascade (n//2) cellules d'ordre 2 et, si n est impair, 1 cellule d'ordre 1.
+        - On récupère pour chaque pôle (omega0_norm, q0).
+          * Si q0=0 => cellule d'ordre 1 (HP).
+          * Si q0!=0 => cellule d'ordre 2.
+
+        On impose ci-dessous que, si c_vals est fourni, on l'utilise
+        pour chaque cellule d'ordre 2, et on calcule R1, R2 par la formule directe.
+        (Ou l'inverse pour la 1re ordre.)
+
+        c_vals et r_vals doivent avoir la longueur = order
+        si on veut imposer explicitement les compos (pas obligatoire).
+        """
+        poles = self.tchebychev_q0_omega0(order)
+
+        # Vérif longueurs
+        if c_vals is not None and len(c_vals) != order:
+            raise ValueError(f"c_vals doit avoir exactement {order} éléments.")
+        if r_vals is not None and len(r_vals) != order:
+            raise ValueError(f"r_vals doit avoir exactement {order} éléments.")
+
+        if c_vals is None:
+            c_vals = [None]*order
+        if r_vals is None:
+            r_vals = [None]*order
+
+        num_combined = [1.]
+        den_combined = [1.]
+        stages = []
+        idx = 0
+
+        for (omega0_norm, q0) in poles:
+            if q0 == 0.0:
+                # ---- 1er ordre HP ----
+                tf1, params1 = self.first_order_highpass(
+                    cutoff_freq,
+                    R=r_vals[idx],   # si imposé
+                    C=c_vals[idx],   # si imposé
+                    omega0_norm=omega0_norm
                 )
-            else:  # Cellule d'ordre 1
-                try:
-                    c1 = capacitors[capacitor_index]
-                except IndexError:
-                    raise ValueError(
-                        f"La liste des condensateurs est trop courte pour l'ordre {order}. "
-                        f"Au moins {num_cells + 1} condensateurs sont nécessaires."
-                    )
-                capacitor_index += 1
-                w = wk_wr * f * 2 * math.pi  # Utilisation correcte de wk_wr pour les cellules d'ordre 1
+                idx += 1
+                stages.append({"tf": tf1, "params": params1})
+                num_combined = np.polymul(num_combined, tf1.num)
+                den_combined = np.polymul(den_combined, tf1.den)
 
-                r1 = 1 / (w * c1)
-                resistances[f"R{2 * i + 1}"] = r1
+            else:
+                # ---- 2e ordre HP ----
+                # On va APPLIQUER LA FORMULE DIRECTE:
+                #    R1 (C1 + C2) = 1/(Q * omega_HP)
+                #    R1 R2 C1 C2 = 1/(omega_HP^2)
+                #
+                # Suppose qu'on fixe c_vals[idx], c_vals[idx+1]
+                # et qu'on calcule R1, R2 par la sallen_key_highpass_direct.
+                #
+                # c_vals[idx], c_vals[idx+1] -> C1, C2
+                c1, c2 = c_vals[idx], c_vals[idx+1]
+                idx += 2
 
-                print(
-                    f"Cellule {i + 1} (ordre 1) : original wk/wr={original_wk_wr:.4f}, utilisé wk/wr={wk_wr:.4f}, "
-                    f"C1={c1:.1e}, R1={r1:.1f}"
+                if (c1 is None) or (c2 is None):
+                    raise ValueError("Pour la cellule d'ordre 2, il faut C1 et C2 (sinon impossible).")
+
+                # Appel direct
+                tf2, params2 = self.sallen_key_highpass_direct(
+                    cutoff_freq,
+                    c1, c2,
+                    omega0_norm=omega0_norm,
+                    q0=q0
                 )
+                stages.append({"tf": tf2, "params": params2})
+                num_combined = np.polymul(num_combined, tf2.num)
+                den_combined = np.polymul(den_combined, tf2.den)
 
-        print("--- Fin des calculs pour les cellules ---")
-        return resistances
-
-
-
-class FilterModule:
-    """Module pour appeler des fonctions comme `filters.snk.tchebychev.hp.order3`."""
-
-    def __init__(self, filter_type, mode):
-        self.filter_type = filter_type
-        self.mode = mode
-
-    def order(self, f, capacitors, order):
-        """Calcule les résistances pour un filtre d'un ordre donné."""
-        params = FilterBase.get_params(self.filter_type, order, self.mode)
-        return FilterBase.calculate_resistances(f, capacitors, params, order)
+        combined_tf = TransferFunction(num_combined, den_combined)
+        return combined_tf, stages
 
 
-# Initialisation des modules pour tous les types de filtres
-class Filters:
-    tchebychev = {
-        "lp": FilterModule("Tchebychev (r=1dB)", "lp"),
-        "hp": FilterModule("Tchebychev (r=1dB)", "hp"),
-    }
-
-
-filters = Filters()
-
+# -----------------------------------------------------------------------
+# Exemple d’utilisation
 if __name__ == "__main__":
-    print("\n--- Test Tchebychev ordre 4 passe-haut ---")
-    capacitors = [10e-9, 10e-9, 10e-9, 5e-9]
-    params_hp_tchebychev_order4 = FilterBase.get_params("Tchebychev (r=1dB)", 4, "hp")
-    print("\n--- Paramètres récupérés depuis le tableau ---")
-    for i, (wk_wr, qk, original_wk_wr) in enumerate(params_hp_tchebychev_order4, start=1):
-        wk_wr_str = f"{wk_wr:.4f}" if wk_wr is not None else "N/A"
-        original_wk_wr_str = f"{original_wk_wr:.4f}" if original_wk_wr is not None else "N/A"
-        qk_str = f"{qk:.4f}" if qk is not None else "None"
-        print(
-            f"  Cellule {i}: original wk/wr = {original_wk_wr_str}, utilisé wk/wr = {wk_wr_str}, Qk = {qk_str}"
-        )
+    # Filtre Tchebychev passe-haut d'ordre 4, Fc = 2.5 kHz
+    order = 4
+    fc = 2.5e3
 
-    result_hp_tchebychev = filters.tchebychev["hp"].order(f=2500, capacitors=capacitors, order=4)
+    # On fixe 4 condensateurs => (1er ordre : 1 condo, 2ᵉ ordre : 2 condos, etc.)
+    # ex. 10nF, 10nF, 10nF, 5nF
+    # => la 1ʳᵉ cellule a q=0 => 1er ordre => c_vals[0] = 10nF
+    # => la 2ʳᵉ cellule a q!=0 => c_vals[1], c_vals[2], c_vals[3], etc.
+    #
+    # Mais pour un ordre 4 Tchebychev, on a 2 pôles => chacun q != 0
+    # => En réalité, selon votre table, vérifiez s'il y a un pôle q=0.
+    # => S'il n'y en a pas, on aura DEUX cellules d'ordre 2 => on a besoin de 4 condos total.
+    #
+    # Pour simplifier, on indique 4 valeurs :
+    c_vals = [10e-9, 10e-9, 10e-9, 5e-9]
 
-    print("\n--- Résistances calculées (arrondies au demi-ohm) ---")
-    for res_name, res_value in result_hp_tchebychev.items():
-        print(f"  {res_name} = {res_value:.1f} Ω")
+    # On ne spécifie pas R => le code va calculer R1, R2 par la relation directe.
+    r_vals = None
 
+    hp_filter = Highpasstchebychev()
+    tf_hp, stages_info = hp_filter.design_filter(
+        order=order,
+        cutoff_freq=fc,
+        c_vals=c_vals,
+        r_vals=r_vals
+    )
 
+    print("=== STAGES INFO ===")
+    for i, st in enumerate(stages_info, start=1):
+        print(f"Cellule {i}: {st['params']}")
 
+    print("\n=== FONCTION DE TRANSFERT GLOBALE ===")
+    print("Num =", tf_hp.num)
+    print("Den =", tf_hp.den)
 
+    # Bode plot
+    w = np.logspace(2, 6, 500)
+    w, mag, phase = bode(tf_hp, w=w)
+    freq_hz = w / (2*np.pi)
 
+    fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    ax_mag.semilogx(freq_hz, mag, 'b')
+    ax_mag.set_ylabel('Magnitude (dB)')
+    ax_mag.set_title(f'Tchebychev HP ordre={order} - Fc={fc/1e3} kHz (Relation directe)')
 
-    print("\n--- Test Tchebychev ordre 3 passe-bas ---")
+    ax_phase.semilogx(freq_hz, phase, 'r')
+    ax_phase.set_xlabel('Fréquence (Hz)')
+    ax_phase.set_ylabel('Phase (deg)')
+    ax_phase.grid(True)
+    ax_mag.grid(True)
 
-    # Capacitors utilisés
-    capacitors = [10e-9, 10e-9, 5e-9]
-
-    # Récupérer les paramètres depuis le tableau
-    params_lp_tchebychev_order3 = FilterBase.get_params("Tchebychev (r=1dB)", 3, "lp")
-
-    print("\n--- Paramètres récupérés depuis le tableau ---")
-    for i, (wk_wr, qk, original_wk_wr) in enumerate(params_lp_tchebychev_order3, start=1):
-        wk_wr_str = f"{wk_wr:.4f}" if wk_wr is not None else "N/A"
-        original_wk_wr_str = f"{original_wk_wr:.4f}" if original_wk_wr is not None else "N/A"
-        qk_str = f"{qk:.4f}" if qk is not None else "None"
-        print(
-            f"  Cellule {i}: original wk/wr = {original_wk_wr_str}, utilisé wk/wr = {wk_wr_str}, Qk = {qk_str}"
-        )
-
-    # Calcul des résistances
-    result_lp_tchebychev_order3 = filters.tchebychev["lp"].order(f=2500, capacitors=capacitors, order=3)
-
-    print("\n--- Résistances calculées (arrondies au demi-ohm) ---")
-    for res_name, res_value in result_lp_tchebychev_order3.items():
-        print(f"  {res_name} = {res_value:.1f} Ω")
+    plt.tight_layout()
+    plt.show()
