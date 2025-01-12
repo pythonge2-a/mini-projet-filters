@@ -1,25 +1,15 @@
+# __init__.py
 import butterworth as bt
 import bessel as bl
 
-'''
-lowpass = bl.Lowpass()
-highpass = bl.Highpass()
+
+lowpass = bl.lowpass()
+highpass = bl.highpass()
 
 # Spécifier les résistances et calculer les condensateurs
-c_vals = [1e-6,1e-9,1e-6,1e-9]
-tf, stages = highpass.multiple_order_highpass(order=4, cutoff_freq=1000, c_vals=c_vals)
+r_vals = [1000,10000]
+highpass.graphs(order=2, cutoff_freq=1000, r_vals=r_vals)
 
-print("Fonction de transfert combinée :", tf)
-for i, stage in enumerate(stages):
-    print(f"Stage {i+1}:")
-    print("Fonction de transfert :", stage['tf'])
-    print("Paramètres :", stage['params'])
-'''
-'''
-lowpass = bt.Butterworth_LowPass()
 
-# Spécifier les résistances et calculer les condensateurs
-resistance = [200]
-tf = lowpass.components(order=1,cutoff_frequency=20000,res_values=resistance)
-print("Fonction de transfert combinée :", tf)
-'''
+
+

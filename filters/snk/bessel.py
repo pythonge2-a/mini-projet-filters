@@ -208,8 +208,8 @@ class highpass:
         else:
             raise ValueError("Fournir R ou C.")
         re = r*c
-        num = [1]
-        den = [1,re]
+        num = [r*c, 0]
+        den = [r*c, 1]
         print(den)
 
         return TransferFunction(num, den), {"R": r, "C": c}
