@@ -35,8 +35,8 @@ class lowpass:
         else:
             raise ValueError("Fournir R ou C pour le calcul du premier ordre.")
 
-        num = [1]
-        den = [1,r * c]
+        num = [1.0]
+        den = [r * c,1.0]
         return TransferFunction(num, den), {"R": r, "C": c}
  # Calcule un filtre passe-bas de second ordre avec la cellule Sallen-Key.
     def sallen_key_lowpass(self, order, cutoff_freq, r1=None, r2=None, c1=None, c2=None, omega0_norm=None, q0=None):
@@ -58,20 +58,20 @@ class lowpass:
             if discriminant < 0:
                 raise ValueError("Les paramètres fournis pour C1 et C2 ne permettent pas un calcul valide de R1 et R2.")
             r21 = (-b + np.sqrt(discriminant)) / 2
-            r22 = (-b - np.sqrt(discriminant)) / 2
+           # r22 = (-b - np.sqrt(discriminant)) / 2
             r11 = r1_plus_r2 - r21
-            r12 = r1_plus_r2 - r22
+           # r12 = r1_plus_r2 - r22
 
-            num = [1,0,0]
-            den1 = [1,(r11 + r21) * c2,r11 * r21 * c1 * c2]
-            den2 = [1,(r12 + r22) * c2,r12 * r22 * c1 * c2]
+            num = [1.0]
+            den = [r11 * r21 * c1 * c2,(r11 + r21) * c2,1.0]
+           # den2 = [r12 * r22 * c1 * c2,(r12 + r22) * c2,1.0]
 
-            tf1 = TransferFunction(num, den1)
-            tf2 = TransferFunction(num, den2)
+            tf = TransferFunction(num, den)
+          #  tf2 = TransferFunction(num, den2)
 
             return [
-                {"tf": tf1, "params": {"R1": r11, "R2": r21, "C1": c1, "C2": c2}},
-                {"tf": tf2, "params": {"R1": r12, "R2": r22, "C1": c1, "C2": c2}},
+                {"tf": tf, "params": {"R1": r11, "R2": r21, "C1": c1, "C2": c2}},
+                #{"tf": tf2, "params": {"R1": r12, "R2": r22, "C1": c1, "C2": c2}},
             ]
         elif r1 is not None and r2 is not None:
             c2 = 1 / (omega0 * q0 * (r1 + r2))
@@ -79,8 +79,8 @@ class lowpass:
             if c1 <= 0 or c2 <= 0:
                 raise ValueError("Les paramètres fournis pour R1 et R2 ne permettent pas un calcul valide de C1 et C2.")
 
-            num = [1,0,0]
-            den = [1,(r1 + r2) * c2,r1 * r2 * c1 * c2]
+            num = [1.0]
+            den = [r1 * r2 * c1 * c2, (r1 + r2) * c2,1.0]
 
             tf = TransferFunction(num, den)
             return [{"tf": tf, "params": {"R1": r1, "R2": r2, "C1": c1, "C2": c2}}]
@@ -209,7 +209,7 @@ class highpass:
             raise ValueError("Fournir R ou C.")
         re = r*c
         num = [r*c, 0]
-        den = [r*c, 1]
+        den = [r*c, 1.0]
         print(den)
 
         return TransferFunction(num, den), {"R": r, "C": c}
@@ -237,10 +237,10 @@ class highpass:
             c11 = c1_plus_c2 - c21
             c12 = c1_plus_c2 - c22
 
-            num1 = [0,0,r1 * r2 * c11 * c21,]
-            num2 = [0,0,r1 * r2 * c12 * c22]
-            den1 = [1,(r1 * c11 + r1 * c21),r1 * r2 * c11 * c21]
-            den2 = [1,(r1 * c12 + r1 * c22),r1 * r2 * c12 * c22]
+            num1 = [r1 * r2 * c11 * c21,0,0]
+            num2 = [r1 * r2 * c12 * c22,0,0]
+            den1 = [r1 * r2 * c11 * c21,(r1 * c11 + r1 * c21),1.0]
+            den2 = [r1 * r2 * c12 * c22,(r1 * c12 + r1 * c22),1.0]
 
             tf1 = TransferFunction(num1, den1)
             tf2 = TransferFunction(num2, den2)
@@ -256,8 +256,8 @@ class highpass:
             print(q0)
             print(omega0)
 
-            num = [0,0,r1 * r2 * c1 * c2]
-            den = [1,(r1 * c1 + r1 * c2), r1 * r2 * c1 * c2]
+            num = [r1 * r2 * c1 * c2,0,0]
+            den = [r1 * r2 * c1 * c2,(r1 * c1 + r1 * c2),1.0]
 
             tf = TransferFunction(num, den)
             return [
@@ -347,5 +347,6 @@ class highpass:
 
         plt.tight_layout()
         plt.show()
+
 
 
