@@ -14,6 +14,7 @@ for i, stage in enumerate(stages):
     print("Fonction de transfert :", stage['tf'])
     print("Paramètres :", stage['params'])
 '''
-r_vals2 = ()
+r_vals2 = [18]
 lowpass=btw.Butterworth_LowPass()
-values, tf = lowpass.components(order=1, cutoff_frequency=20000, res_values=r_vals2)
+values, tf = lowpass.components(order=1, cutoff_frequency=20000)
+print(values, tf)

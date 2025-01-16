@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 class Butterworth_LowPass:
     def __init__(self):    
@@ -18,8 +18,8 @@ class Butterworth_LowPass:
         }
 
     def components(self, order, cutoff_frequency, res_values=None, condo_values=None):
-        r'''
-        Cette fonction calcule les composants manquants pour réaliser le filtre voulu ainsi que ça fonction de transfert.
+        '''
+        Cette fonction calcule les composants manquants pour réaliser le filtre voulu.
 
         Pour les ordres impairs, les R1,C1 seront toujours les valeurs de composants du premier étage (1er ordre).
         Pour les ordres pairs, les composants seront par paire de 2.
@@ -28,33 +28,38 @@ class Butterworth_LowPass:
         if order not in self.BUTTERWORTH_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")   
 
+        # Verifie que une frequence de coupure à été donnée
         if cutoff_frequency is None:
             raise ValueError("Veuillez fournir une fréquence de coupure.")
+        # Calcul de W0
         pulsation_W0 = 2 * np.pi * cutoff_frequency
 
         if order == 1:
+            # Verifie si une liste à été entrée
             if res_values is not None:
-                # Verifie que l'entrée est du type int ou float
+                nbr_elements = len(res_values)
+                # Verifie la taille de la liste
+                if nbr_elements > 1 or nbr_elements == 0:
+                    raise ValueError("Pour le 1er ordre veuillez mettre une résistance.")
+                # Verifie le type des données de la liste
                 if isinstance(res_values[0], (int, float)):
-                    # Verifie que la liste ne contient qu'1 seul élément
-                    nbr_elements = len(res_values)
-                    if nbr_elements > 1:
-                        raise ValueError("Pour le 1er ordre veuillez mettre qu'une seule résistance.")
-                    condo_values = 1/(pulsation_W0 * res_values[0])
-                    return {"R": res_values, "C": condo_values} 
+                    # Calcul du composant
+                    condo_value = 1/(pulsation_W0 * res_values[0])
+                    # Retourne les valeurs calculées
+                    return {res_values[0], condo_value}
                 else:
-                    raise ValueError("Veuillez insérer une valeur de résistance valable.")
+                    raise ValueError("Veuillez insérer des valeurs valables.")
             elif condo_values is not None:
                 # Verifie que l'entrée est du type int ou float
-                if isinstance(condo_values[0], (int,float)):
-                    nbr_elements = len(condo_values)
-                    # Verifie que la liste ne contient qu'1 seul élément
-                    if nbr_elements > 1 or nbr_elements == 0:
-                        raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
-                    res_values = 1/(pulsation_W0 * condo_values[0])
-                    return {"R": res_values, "C": condo_values[0]}
+                nbr_elements = len(condo_values)
+                # Verifie que la liste ne contient qu'1 seul élément
+                if nbr_elements > 1 or nbr_elements == 0:
+                    raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
+                if isinstance(condo_values[0], (int, float)):
+                    res_value = 1/(pulsation_W0 * condo_values[0])
+                    return {res_value, condo_values[0]}
                 else:
-                    raise ValueError("Veuillez insérer une valeur valable.")
+                    raise ValueError("Veuillez insérer des valeurs valables.")
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
         '''    
