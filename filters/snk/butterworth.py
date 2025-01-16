@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import TransferFunction
+import matplotlib as plt
 
 class Butterworth_LowPass:
     def __init__(self):    
@@ -27,7 +27,6 @@ class Butterworth_LowPass:
         # Verifie si l'ordre du filtre est dans le dictionnaire
         if order not in self.BUTTERWORTH_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")   
-        quality_Q0 = self.BUTTERWORTH_TABLE[order][0]
 
         if cutoff_frequency is None:
             raise ValueError("Veuillez fournir une fréquence de coupure.")
@@ -39,12 +38,10 @@ class Butterworth_LowPass:
                 if isinstance(res_values[0], (int, float)):
                     # Verifie que la liste ne contient qu'1 seul élément
                     nbr_elements = len(res_values)
-                    if nbr_elements > 2:
+                    if nbr_elements > 1:
                         raise ValueError("Pour le 1er ordre veuillez mettre qu'une seule résistance.")
                     condo_values = 1/(pulsation_W0 * res_values[0])
-                    num = [1]
-                    den = [res_values[0] * condo_values, 1]
-                    return TransferFunction(num, den), {"R": res_values[0], "C": condo_values} 
+                    return {"R": res_values, "C": condo_values} 
                 else:
                     raise ValueError("Veuillez insérer une valeur de résistance valable.")
             elif condo_values is not None:
@@ -52,17 +49,15 @@ class Butterworth_LowPass:
                 if isinstance(condo_values[0], (int,float)):
                     nbr_elements = len(condo_values)
                     # Verifie que la liste ne contient qu'1 seul élément
-                    if nbr_elements > 2:
+                    if nbr_elements > 1 or nbr_elements == 0:
                         raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
                     res_values = 1/(pulsation_W0 * condo_values[0])
-                    num = [1]
-                    den = [condo_values[0] * res_values, 1]
-                    return TransferFunction(num, den), {"R": res_values, "C": condo_values[0]}
+                    return {"R": res_values, "C": condo_values[0]}
                 else:
                     raise ValueError("Veuillez insérer une valeur valable.")
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
-            
+        '''    
         if order >= 2:
             if res_values is not None:
                 if isinstance(res_values, (int,float)):
@@ -72,12 +67,18 @@ class Butterworth_LowPass:
                     elif nbr_elements < order:
                         raise ValueError(f"Votre liste ne contient pas assez de résistances.\n Inséré {nbr_elements} résistances dans votre liste.")
                     else:
+                        pulsation_W0 = 2 * np.pi * cutoff_frequency
+                        quality_q0.clear()
                         # Verifie si l'ordre est paire
                         if order % 2 == 0:
                             nbr_etages = order/2
+                            for x in nbr_etages:
+                                quality_q0.append(self.BUTTERWORTH_TABLE[order][x - 1]) # Au cas ou plusieurs etages
+                                c2 = 1 / ((res_values[0] + res_values[1]) * pulsation_W0 * quality_q0[0])
+                                c1 = ((res_values[0] + res_values[1]) * quality_q0[0]) / (res_values[0] * res_values[1] * pulsation_W0)
+                                return {"R1": res_values[0], "R2": res_values[1], "C1": c1, "C2":c2}
+                        # Verifie si l'ordre est impaire
                         if order % 2 != 0:
                             nbr_etages = order // 2 + 1
-                        # Calcul des composants
-
                 else:
-                    raise ValueError("Veuillez insérer des valeurs valables.")
+                    raise ValueError("Veuillez insérer des valeurs valables.")'''
