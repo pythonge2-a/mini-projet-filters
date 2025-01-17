@@ -1,5 +1,5 @@
-import bessel as bt
-import butterworth as btw
+#import bessel as bt
+#import butterworth as btw
 
 '''
 lowpass = bt.lowpass()
@@ -14,7 +14,9 @@ for i, stage in enumerate(stages):
     print("Fonction de transfert :", stage['tf'])
     print("Paramètres :", stage['params'])
 '''
+'''
 r_vals2 = [18]
 lowpass=btw.Butterworth_LowPass()
 values, tf = lowpass.components(order=1, cutoff_frequency=20000)
 print(values, tf)
+'''
