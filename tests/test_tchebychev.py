@@ -1,86 +1,160 @@
-import pytest
-import numpy as np
-from scipy.signal import bode
-from filters.snk.tchebychev import TchebychevFilter
+import unittest
+from filters.snk.tchebychev import FilterBase, Filters
 
-def test_lowpass_order3():
-    """Test pour le filtre passe-bas d'ordre 3."""
-    filter_designer = TchebychevFilter()
-    order_lp = 3
-    fc_lp = 1e3
-    cvals_lp = [10e-9, 10e-9, 4.7e-9]
 
-    tf_lp, stages_lp = filter_designer.design_filter(
-        order=order_lp,
-        cutoff_freq=fc_lp,
-        filter_type="lowpass",
-        c_vals=cvals_lp,
-        r_vals=None
-    )
+class TestTchebychev(unittest.TestCase):
+    def setUp(self):
+        self.filters = Filters()
+        self.f = 2500  # Fréquence en Hz
+        self.tolerance = 0.1  # Tolérance pour les comparaisons (en ohms)
 
-    print(f"\n=== Test Passe-Bas Ordre {order_lp} ===")
-    print(f"Fréquence de coupure : {fc_lp} Hz")
-    print(f"Nombre de cellules obtenues : {len(stages_lp)}")
-    for i, stage in enumerate(stages_lp, start=1):
-        print(f"Cellule {i} paramètres : {stage['params']}")
-        print(f"Cellule {i} fonction de transfert : {stage['tf']}")
+    def test_tchebychev_order_1(self):
+        capacitors = [10e-9]
+        order = 1
+        params = FilterBase.get_params("Tchebychev (r=1dB)", order, "lp")
 
-    assert len(stages_lp) == 2, "Nombre incorrect de cellules dans le filtre passe-bas."
-    for stage in stages_lp:
-        if "R" in stage["params"] and "C" in stage["params"]:
-            assert "R" in stage["params"] and "C" in stage["params"], "Paramètres R et C manquants dans une cellule d'ordre 1."
-        elif "R1" in stage["params"] and "R2" in stage["params"]:
-            assert "R1" in stage["params"] and "R2" in stage["params"], "Paramètres R1 et R2 manquants dans une cellule d'ordre 2."
+        # Vérifie les paramètres récupérés
+        expected_params = [
+            (1.9652, None, 1.9652),
+        ]
+        self.assertEqual(len(params), len(expected_params))
+        for param, expected in zip(params, expected_params):
+            self.assertAlmostEqual(param[0], expected[0], places=4)
+            self.assertAlmostEqual(param[1] or 0, expected[1] or 0, places=4)
+            self.assertAlmostEqual(param[2], expected[2], places=4)
 
-def test_highpass_order4():
-    """Test pour le filtre passe-haut d'ordre 4."""
-    filter_designer = TchebychevFilter()
-    order_hp = 4
-    fc_hp = 2.5e3
-    cvals_hp = [10e-9, 10e-9, 10e-9, 5e-9]
+        # Vérifie les résistances calculées
+        result = self.filters.tchebychev["lp"].order(f=self.f, capacitors=capacitors, order=order)
+        expected_resistances = {
+            "R1": 3239.5,
+        }
+        for res_name, expected_value in expected_resistances.items():
+            self.assertAlmostEqual(
+                result[res_name], expected_value, delta=self.tolerance,
+                msg=f"Échec pour {res_name}: {result[res_name]} != {expected_value}"
+            )
 
-    tf_hp, stages_hp = filter_designer.design_filter(
-        order=order_hp,
-        cutoff_freq=fc_hp,
-        filter_type="highpass",
-        c_vals=cvals_hp,
-        r_vals=None
-    )
+    def test_tchebychev_order_2(self):
+        capacitors = [10e-9, 10e-9]
+        order = 2
+        params = FilterBase.get_params("Tchebychev (r=1dB)", order, "lp")
 
-    print(f"\n=== Test Passe-Haut Ordre {order_hp} ===")
-    print(f"Fréquence de coupure : {fc_hp} Hz")
-    print(f"Nombre de cellules obtenues : {len(stages_hp)}")
-    for i, stage in enumerate(stages_hp, start=1):
-        print(f"Cellule {i} paramètres : {stage['params']}")
-        print(f"Cellule {i} fonction de transfert : {stage['tf']}")
+        # Vérifie les paramètres récupérés
+        expected_params = [
+            (1.0500, 0.9565, 1.0500),
+        ]
+        self.assertEqual(len(params), len(expected_params))
+        for param, expected in zip(params, expected_params):
+            self.assertAlmostEqual(param[0], expected[0], places=4)
+            self.assertAlmostEqual(param[1], expected[1], places=4)
+            self.assertAlmostEqual(param[2], expected[2], places=4)
 
-    assert len(stages_hp) == 2, "Nombre incorrect de cellules dans le filtre passe-haut."
-    for stage in stages_hp:
-        assert "R1" in stage["params"] and "R2" in stage["params"], "Paramètres R1 et R2 manquants dans une cellule."
+        # Vérifie les résistances calculées
+        result = self.filters.tchebychev["lp"].order(f=self.f, capacitors=capacitors, order=order)
+        expected_resistances = {
+            "R1": 3169.4,  # Valeur corrigée
+            "R2": 11598.6,  # Valeur corrigée
+        }
+        for res_name, expected_value in expected_resistances.items():
+            self.assertAlmostEqual(
+                result[res_name], expected_value, delta=self.tolerance,
+                msg=f"Échec pour {res_name}: {result[res_name]} != {expected_value}"
+            )
 
-def test_bode_response():
-    """Test pour vérifier la réponse en fréquence."""
-    filter_designer = TchebychevFilter()
-    order_lp = 3
-    fc_lp = 1e3
-    cvals_lp = [10e-9, 10e-9, 4.7e-9]
 
-    tf_lp, _ = filter_designer.design_filter(
-        order=order_lp,
-        cutoff_freq=fc_lp,
-        filter_type="lowpass",
-        c_vals=cvals_lp,
-        r_vals=None
-    )
 
-    w = np.logspace(2, 5, 400)
-    w, mag, phase = bode(tf_lp, w=w)
+    def test_tchebychev_order_3_lp(self):
+        capacitors = [10e-9, 10e-9, 5e-9]
+        order = 3
+        params = FilterBase.get_params("Tchebychev (r=1dB)", order, "lp")
 
-    print(f"\n=== Test Réponse en Fréquence Passe-Bas Ordre {order_lp} ===")
-    print(f"Fréquence de coupure : {fc_lp} Hz")
-    print(f"Longueur du vecteur fréquence : {len(w)}")
-    print(f"Premières valeurs de magnitude (dB) : {mag[:5]}")
-    print(f"Premières valeurs de phase (degrés) : {phase[:5]}")
+        # Vérifie les paramètres récupérés
+        expected_params = [
+            (0.4942, None, 0.4942),
+            (0.9971, 2.0177, 0.9971),
+        ]
+        self.assertEqual(len(params), len(expected_params))
+        for param, expected in zip(params, expected_params):
+            self.assertAlmostEqual(param[0], expected[0], places=4)
+            self.assertAlmostEqual(param[1] or 0, expected[1] or 0, places=4)
+            self.assertAlmostEqual(param[2], expected[2], places=4)
 
-    assert len(mag) == len(w), "La longueur de la réponse magnitude ne correspond pas."
-    assert len(phase) == len(w), "La longueur de la réponse phase ne correspond pas."
+        # Vérifie les résistances calculées
+        result = self.filters.tchebychev["lp"].order(f=self.f, capacitors=capacitors, order=order)
+        expected_resistances = {
+            "R1": 12881.8,  # Ajoutez ici la valeur corrigée si nécessaire
+            "R3": 2109.6,
+            "R4": 38647.3,
+        }
+        for res_name, expected_value in expected_resistances.items():
+            self.assertAlmostEqual(
+                result[res_name], expected_value, delta=self.tolerance,
+                msg=f"Échec pour {res_name}: {result[res_name]} != {expected_value}"
+            )
+
+    def test_tchebychev_order_4_hp_ex_FA9(self):
+        capacitors = [10e-9, 10e-9, 10e-9, 5e-9]
+        order = 4
+        params = FilterBase.get_params("Tchebychev (r=1dB)", order, "hp")
+
+        # Vérifie les paramètres récupérés
+        expected_params = [
+            (1 / 0.5286, 0.7845, 0.5286),
+            (1 / 0.9932, 3.5590, 0.9932),
+        ]
+        self.assertEqual(len(params), len(expected_params))
+        for param, expected in zip(params, expected_params):
+            self.assertAlmostEqual(param[0], expected[0], places=4)
+            self.assertAlmostEqual(param[1], expected[1], places=4)
+            self.assertAlmostEqual(param[2], expected[2], places=4)
+
+        # Vérifie les résistances calculées
+        result = self.filters.tchebychev["hp"].order(f=self.f, capacitors=capacitors, order=order)
+        expected_resistances = {
+            "R1": 2144.8,  # Ajoutez ici la valeur corrigée si nécessaire
+            "R2": 5280.0,
+            "R3": 1184.4,
+            "R4": 67509.7,
+        }
+        for res_name, expected_value in expected_resistances.items():
+            self.assertAlmostEqual(
+                result[res_name], expected_value, delta=self.tolerance,
+                msg=f"Échec pour {res_name}: {result[res_name]} != {expected_value}"
+            )
+
+    def test_tchebychev_order_5(self):
+        capacitors = [10e-9, 10e-9, 10e-9, 10e-9, 5e-9]
+        order = 5
+        params = FilterBase.get_params("Tchebychev (r=1dB)", order, "lp")
+
+        # Vérifie les paramètres récupérés
+        expected_params = [
+            (0.2895, None, 0.2895),
+            (0.6552, 1.3988, 0.6552),
+            (0.9941, 5.5564, 0.9941),
+        ]
+        self.assertEqual(len(params), len(expected_params))
+        for param, expected in zip(params, expected_params):
+            self.assertAlmostEqual(param[0], expected[0], places=4)
+            self.assertAlmostEqual(param[1] or 0, expected[1] or 0, places=4)
+            self.assertAlmostEqual(param[2], expected[2], places=4)
+
+        # Vérifie les résistances calculées
+        result = self.filters.tchebychev["lp"].order(f=self.f, capacitors=capacitors, order=order)
+        expected_resistances = {
+            "R1": 21990.3,
+            "R3": 3473.1,
+            "R4": 27182.7,
+            "R5": 768.4,
+            "R6": 106749.2,
+        }
+        for res_name, expected_value in expected_resistances.items():
+            self.assertAlmostEqual(
+                result[res_name], expected_value, delta=self.tolerance,
+                msg=f"Échec pour {res_name}: {result[res_name]} != {expected_value}"
+            )
+
+
+
+if __name__ == "__main__":
+    unittest.main()
