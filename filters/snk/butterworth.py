@@ -21,8 +21,10 @@ class Butterworth_LowPass:
         '''
         Cette fonction calcule les composants manquants pour réaliser le filtre voulu.
 
-        Pour les ordres impairs, les R1,C1 seront toujours les valeurs de composants du premier étage (1er ordre).
-        Pour les ordres pairs, les composants seront par paire de 2.
+        Si ordre impair alors premier élément de la liste doit être R1 du premier étage
+        Format de la liste des résistances --> [R1, R2, ..., Rx]
+        Format de la liste des condensateurs --> [C1, C2, ..., Cx]
+        Format de sortie --> [Composant 1, Composant 2, ..., Composant x]
         '''
         # Verifie si l'ordre du filtre est dans le dictionnaire
         if order not in self.BUTTERWORTH_TABLE:
@@ -59,31 +61,143 @@ class Butterworth_LowPass:
                     res_value = 1/(pulsation_W0 * condo_values[0])
                     return {res_value, condo_values[0]}
                 else:
-                    raise ValueError("Veuillez insérer des valeurs valables.")
+                    raise ValueError("Veuillez insérer des int ou float.")
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
-        '''    
+            
         if order >= 2:
+            # Verifie si une liste à été entrée
             if res_values is not None:
-                if isinstance(res_values, (int,float)):
-                    nbr_elements = len(res_values)
-                    if nbr_elements > order:
-                        raise ValueError(f"Votre liste contient trop de résistances.\n Inséré {nbr_elements} résistances dans votre liste.") 
-                    elif nbr_elements < order:
-                        raise ValueError(f"Votre liste ne contient pas assez de résistances.\n Inséré {nbr_elements} résistances dans votre liste.")
-                    else:
-                        pulsation_W0 = 2 * np.pi * cutoff_frequency
-                        quality_q0.clear()
-                        # Verifie si l'ordre est paire
-                        if order % 2 == 0:
-                            nbr_etages = order/2
-                            for x in nbr_etages:
-                                quality_q0.append(self.BUTTERWORTH_TABLE[order][x - 1]) # Au cas ou plusieurs etages
-                                c2 = 1 / ((res_values[0] + res_values[1]) * pulsation_W0 * quality_q0[0])
-                                c1 = ((res_values[0] + res_values[1]) * quality_q0[0]) / (res_values[0] * res_values[1] * pulsation_W0)
-                                return {"R1": res_values[0], "R2": res_values[1], "C1": c1, "C2":c2}
-                        # Verifie si l'ordre est impaire
-                        if order % 2 != 0:
-                            nbr_etages = order // 2 + 1
-                else:
-                    raise ValueError("Veuillez insérer des valeurs valables.")'''
+                nbr_elements = len(res_values)
+                # Verifie si l'ordre est pair
+                # Calcul le nombre d'étages du filtre
+                if order % 2 == 0:
+                    stage = order/2
+                    # Verifie que la taille de la liste soit conforme
+                    if nbr_elements < (stage * 2) or nbr_elements > (stage * 2):
+                        raise ValueError(f"Veuillez mettre {stage * 2} éléments dans la liste.")
+                    for x in res_values:
+                        # Verifier que chaque élément est du type int ou float
+                        if isinstance(x, (int, float)):
+                            None
+                        else:
+                            raise ValueError("Veuillez insérer des int ou float.")
+                    condo_value = []
+                    for y in range(int(stage)):
+                        # Indices pour les résistances
+                        res_start = y * 2
+                        res_end = res_start + 2
+                        current_res =  res_values[res_start:res_end]
+                        # Calculs des composants
+                        c = 1 / ((current_res[0] + current_res[1]) * pulsation_W0 * self.BUTTERWORTH_TABLE[order][y])
+                        condo_value.append(c)
+
+                        c = ((current_res[0] + current_res[1]) * self.BUTTERWORTH_TABLE[order][y]) / (current_res[0] * current_res[1] * pulsation_W0)
+                        condo_value.append(c)
+
+                # Verifie si l'ordre est impair
+                elif order % 2 != 0:
+                    stage = order // 2 + 1
+                    # Verifie que la taille de la liste soit conforme 
+                    if nbr_elements > (stage * 2 - 1) or nbr_elements < (stage * 2 - 1):
+                        raise ValueError(f"Veuillez mettre {stage * 2 - 1} éléments dans la liste.")
+                    for x in res_values:
+                        # Verifier que chaque élément est du type int ou float
+                        if isinstance(x, (int, float)):
+                            None
+                        else:
+                            raise ValueError("Veuillez insérer des int ou float.")
+                    condo_value = []
+                    for y in range(int(stage)):
+                        # Indices pour les résistances
+                        if y == 0: # Premier stage pour un ordre impair
+                            # Le premier stage utilise une résistance et un condensateur
+                            c1 = 1/(pulsation_W0 * res_values[0])
+                            condo_value.append(c1)
+                        else:
+                            # Stages suivants avec deux résistances et deux condensateurs
+                            res_start = (y - 1) * 2 + (1 if order % 2 == 1 else 0)
+                            current_res = res_values[res_start:res_start + 2]
+                            c1 = 1 / ((current_res[0] + current_res[1]) * pulsation_W0 * self.BUTTERWORTH_TABLE[order][y])
+                            c2 = ((current_res[0] + current_res[1]) * self.BUTTERWORTH_TABLE[order][y]) / (current_res[0] * current_res[1] * pulsation_W0)
+                            condo_value.extend([c1, c2])
+                return condo_value
+            
+            # Verifie si une liste à été entrée
+            if condo_values is not None:
+                nbr_elements = len(condo_values)
+                # Verifie si l'ordre est pair
+                # Calcul le nombre d'étages du filtre
+                if order % 2 == 0:  
+                    stage = order/2
+                    # Verifie que la taille de la liste soit conforme
+                    if nbr_elements < (stage * 2) or nbr_elements > (stage * 2):
+                        raise ValueError(f"Veuillez mettre {stage * 2} éléments dans la liste.")
+                    for x in condo_values:
+                        # Verifier que chaque élément est du type int ou float
+                        if isinstance(x, (int, float)):
+                            None
+                        else:
+                            raise ValueError("Veuillez insérer des int ou float.")
+                    res_value = []
+                    for y in range(int(stage)):
+                        c1_idx = y * 2
+                        c2_idx = c1_idx + 1
+                        q0 = self.BUTTERWORTH_TABLE[order][y]
+                        c1, c2 = condo_values[c1_idx], condo_values[c2_idx]
+
+                        # Vérification de la condition
+                        if condo_values[c1_idx] < 4 * condo_values[c2_idx] * self.BUTTERWORTH_TABLE[order][y]**2:
+                            raise ValueError(f"Condition non respectée au stage {y + 1}: C1 ({c1}) >= 4 * C2 ({c2}) * Q0^2 ({q0**2}).")
+
+                        # Calcul des résistances
+                        j = 1 / (pulsation_W0 * condo_values[c2_idx] * q0)
+                        k = 1 / (pulsation_W0**2 * condo_values[c1_idx] * condo_values[c2_idx])
+                        discriminant = j**2 - 4 * k
+
+                        if discriminant < 0:
+                            raise ValueError("Discriminant négatif : impossible de calculer les résistances.")
+
+                        r2 = (j + np.sqrt(discriminant)) / 2
+                        r1 = j - r2
+                        res_value.extend([r1, r2])
+                # Verifie si l'ordre est impair
+                # Calcul le nombre d'étages du filtre
+                elif order % 2 != 0:
+                    stage = order // 2 + 1
+                    # Verifie que la taille de la liste soit conforme 
+                    if nbr_elements > (stage * 2 - 1) or nbr_elements < (stage * 2 - 1):
+                        raise ValueError(f"Veuillez mettre {stage * 2 - 1} éléments dans la liste.")
+                    for x in condo_values:
+                        # Verifier que chaque élément est du type int ou float
+                        if isinstance(x, (int, float)):
+                            None
+                        else:
+                            raise ValueError("Veuillez insérer des int ou float.")
+                    res_value = []
+                    # Calcul des étages d'ordre 2 suivants
+                    for y in range(int(stage)):
+                        c1_idx = y * 2 - 1
+                        c2_idx = c1_idx + 1
+                        q0 = self.BUTTERWORTH_TABLE[order][y]
+                        c1, c2 = condo_values[c1_idx], condo_values[c2_idx]
+                        # Calcul des résistances
+                        if y == 0:
+                            # Calcul du premier étage
+                            r1 = 1/(pulsation_W0 * condo_values[0])
+                            res_value.append(r1)
+                        if y > 0:
+                            # Vérification de la condition
+                            if condo_values[c1_idx] < 4 * condo_values[c2_idx] * self.BUTTERWORTH_TABLE[order][y]**2:
+                                raise ValueError(f"Condition non respectée au stage {y + 1}: C1 ({c1}) >= 4 * C2 ({c2}) * Q0^2 ({q0**2}).")
+                            j = 1 / (pulsation_W0 * condo_values[c2_idx] * q0)
+                            k = 1 / (pulsation_W0**2 * condo_values[c1_idx] * condo_values[c2_idx])
+                            discriminant = j**2 - 4 * k
+
+                            if discriminant < 0:
+                                raise ValueError("Discriminant négatif : impossible de calculer les résistances.")
+
+                            r2 = (j + np.sqrt(discriminant)) / 2
+                            r1 = j - r2
+                            res_value.extend([r1, r2])
+                return res_value
