@@ -15,7 +15,7 @@ class TestBesselFilters(unittest.TestCase):
         c_vals = None  # Aucun condensateur spécifié
 
         # Appel de la méthode avec l'instance
-        _, stages = self.lowpass_instance.multiple_order_lowpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
+        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
 
         # Imprimer la structure de stages pour comprendre sa composition
         print("Structure de stages :", stages)
@@ -30,7 +30,7 @@ class TestBesselFilters(unittest.TestCase):
         c_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.lowpass_instance.multiple_order_lowpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
+        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
 
         # Vérification des paramètres pour le deuxième ordre
         self.assertAlmostEqual(stages[0]["params"]["R1"], r_vals[0], delta=self.tolerance, msg=f"Erreur pour R1 : {stages[0]['params']['R1']} != {r_vals[0]}")
@@ -41,7 +41,7 @@ class TestBesselFilters(unittest.TestCase):
         r_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.lowpass_instance.multiple_order_lowpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
+        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
 
         self.assertAlmostEqual(stages[0]["params"]["C"], c_vals[0], delta=self.tolerance, msg=f"Erreur pour C : {stages[0]['params']['C']} != {c_vals[0]}")
         self.assertAlmostEqual(stages[0]["params"]["C"], c_vals[2], delta=self.tolerance, msg=f"Erreur pour C : {stages[0]['params']['C']} != {c_vals[2]}")
@@ -52,7 +52,7 @@ class TestBesselFilters(unittest.TestCase):
         r_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.lowpass_instance.multiple_order_lowpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
+        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
 
         self.assertAlmostEqual(stages[0]["params"]["C1"], c_vals[0], delta=self.tolerance, msg=f"Erreur pour C1 : {stages[0]['params']['C1']} != {c_vals[0]}")
         self.assertAlmostEqual(stages[0]["params"]["C2"], c_vals[1], delta=self.tolerance, msg=f"Erreur pour C2 : {stages[0]['params']['C2']} != {c_vals[1]}")
@@ -66,7 +66,7 @@ class TestBesselFilters(unittest.TestCase):
         r_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.highpass_instance.multiple_order_highpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
+        _, stages = self.highpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
 
         self.assertAlmostEqual(stages[0]["params"]["C"], c_vals[0], delta=self.tolerance, msg=f"Erreur pour C : {stages[0]['params']['C']} != {c_vals[0]}")
     def test_second_order_highpass(self):
@@ -75,7 +75,7 @@ class TestBesselFilters(unittest.TestCase):
         c_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.highpass_instance.multiple_order_highpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
+        _, stages = self.highpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
 
    
         self.assertAlmostEqual(stages[0]["params"]["R1"], r_vals[0], delta=self.tolerance, msg=f"Erreur pour R1 : {stages[0]['params']['R1']} != {r_vals[0]}")
@@ -87,7 +87,7 @@ class TestBesselFilters(unittest.TestCase):
         r_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.highpass_instance.multiple_order_highpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
+        _, stages = self.highpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
 
         self.assertAlmostEqual(stages[0]["params"]["C"], c_vals[0], delta=self.tolerance, msg=f"Erreur pour R : {stages[0]['params']['C']} != {c_vals[0]}")
         self.assertAlmostEqual(stages[0]["params"]["C"], c_vals[2], delta=self.tolerance, msg=f"Erreur pour R1 : {stages[0]['params']['C']} != {c_vals[2]}")
@@ -99,7 +99,7 @@ class TestBesselFilters(unittest.TestCase):
         r_vals = None # Capacités spécifiées
 
         # Résultats obtenus via la fonction
-        _, stages = self.highpass_instance.multiple_order_highpass(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
+        _, stages = self.highpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals,c_vals=c_vals)
 
         self.assertAlmostEqual(stages[0]["params"]["C1"], c_vals[0], delta=self.tolerance, msg=f"Erreur pour C1 : {stages[0]['params']['C1']} != {c_vals[0]}")
         self.assertAlmostEqual(stages[0]["params"]["C2"], c_vals[1], delta=self.tolerance, msg=f"Erreur pour C2 : {stages[0]['params']['C2']} != {c_vals[1]}")

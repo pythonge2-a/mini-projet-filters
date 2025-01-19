@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import TransferFunction
+from scipy.signal import TransferFunction,bode
 import matplotlib.pyplot as plt
 class lowpass:
 # Initialisation de la classe Lowpass avec les pôles de Bessel.
@@ -89,7 +89,7 @@ class lowpass:
         
 # Calcule un filtre passe-bas de n'importe quel ordre en utilisant des cellules en cascade.
 # Permet de choisir entre spécifier les résistances ou les condensateurs.
-    def multiple_order_lowpass(self, order, cutoff_freq, r_vals=None, c_vals=None):
+    def components(self, order, cutoff_freq, r_vals=None, c_vals=None):
         if order not in self.BESSEL_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")
 
@@ -148,27 +148,20 @@ class lowpass:
         return combined_tf, stages
         # Affiche le diagramme de Bode pour un filtre donné.
     def graphs(self, order, cutoff_freq, r_vals=None, c_vals=None):
-        combined_tf, _ = self.multiple_order_lowpass(order, cutoff_freq, r_vals, c_vals)
-        print(combined_tf)
-       # omega = np.logspace(np.log10(cutoff_freq / 10), np.log10(cutoff_freq * 10), 500)
-        w, mag, phase = combined_tf.bode()
-        
-        plt.figure(figsize=(12, 6))
+        combined_tf, _ = self.components(order, cutoff_freq, r_vals, c_vals)
+        w = np.logspace(2, 5, 400)
+        w, mag, phase = bode(combined_tf, w=w)
+        freq_hz = w/(2*np.pi)
 
-        # Magnitude
-        plt.subplot(2, 1, 1)
-        plt.semilogx(w, mag)
-        plt.title("Diagramme de Bode - Gain")
-        plt.ylabel("Gain (dB)")
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+        fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2,1,figsize=(8,6), sharex=True)
+        ax_mag_lp.semilogx(freq_hz, mag, 'b')
+        ax_mag_lp.set_ylabel('Magnitude (dB)')
 
-        # Phase
-        plt.subplot(2, 1, 2)
-        plt.semilogx(w, phase)
-        plt.title("Diagramme de Bode - Phase")
-        plt.xlabel("Pulsation (rad/s)")
-        plt.ylabel("Phase (degrés)")
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+        ax_phase_lp.semilogx(freq_hz, phase, 'r')
+        ax_phase_lp.set_xlabel('Frequency (Hz)')
+        ax_phase_lp.set_ylabel('Phase (deg)')
+        ax_phase_lp.grid(True)
+        ax_mag_lp.grid(True)
 
         plt.tight_layout()
         plt.show()
@@ -207,7 +200,6 @@ class highpass:
             r = 1 / (omega_c * c)
         else:
             raise ValueError("Fournir R ou C.")
-        re = r*c
         num = [r*c, 0]
         den = [r*c, 1.0]
         print(den)
@@ -268,7 +260,7 @@ class highpass:
             raise ValueError("Veuillez fournir soit (R1, R2), soit (C1, C2).")
         
 # Calcule un filtre passe-haut de n'importe quel ordre en utilisant des cellules en cascade.
-    def multiple_order_highpass(self, order, cutoff_freq, r_vals=None, c_vals=None):
+    def components(self, order, cutoff_freq, r_vals=None, c_vals=None):
        
         if order not in self.BESSEL_TABLE:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")
@@ -322,31 +314,21 @@ class highpass:
         print(combined_tf)
         return combined_tf, stages
     def graphs(self, order, cutoff_freq, r_vals=None, c_vals=None):
-        combined_tf, _ = self.multiple_order_highpass(order, cutoff_freq, r_vals, c_vals)
-     #  omega = np.logspace(np.log10(cutoff_freq / 10), np.log10(cutoff_freq * 10), 500)
-        
-        # Calculer la réponse en fréquence
-        w, mag, phase = combined_tf.bode()
+        combined_tf, _ = self.components(order, cutoff_freq, r_vals, c_vals)
+        w2 = np.logspace(2, 6, 500)
+        w2, mag2, phase2 = bode(combined_tf, w=w2)
+        freq_hz2 = w2/(2*np.pi)
 
-        plt.figure(figsize=(12, 6))
+        fig_hp,(ax_mag_hp, ax_phase_hp) = plt.subplots(2,1,figsize=(8,6), sharex=True)
+        ax_mag_hp.semilogx(freq_hz2, mag2, 'b')
+        ax_mag_hp.set_ylabel('Magnitude (dB)')
 
-        # Diagramme de gain
-        plt.subplot(2, 1, 1)
-        plt.semilogx(w, mag)
-        plt.title("Diagramme de Bode - Gain")
-        plt.ylabel("Gain (dB)")
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-
-        # Diagramme de phase
-        plt.subplot(2, 1, 2)
-        plt.semilogx(w, phase)
-        plt.title("Diagramme de Bode - Phase")
-        plt.xlabel("Pulsation (rad/s)")
-        plt.ylabel("Phase (degrés)")
-        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-
+        ax_phase_hp.semilogx(freq_hz2, phase2, 'r')
+        ax_phase_hp.set_xlabel('Frequency (Hz)')
+        ax_phase_hp.set_ylabel('Phase (deg)')
+        ax_phase_hp.grid(True)
+        ax_mag_hp.grid(True)
         plt.tight_layout()
         plt.show()
-
 
 
