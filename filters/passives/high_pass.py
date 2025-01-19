@@ -73,6 +73,7 @@ class HighPassFilter:
 
         return {"R": resistance, "L": L, "C": C}
 
+    @staticmethod
     def bode_plot(
         cutoff_frequency,
         resistance,
@@ -81,7 +82,7 @@ class HighPassFilter:
         filter_type="RC",
     ):
         """
-        Plot the Bode diagram for high-pass RC, RL, and RLC filters.
+        Plot the Bode diagram (gain and phase) for high-pass RC, RL, and RLC filters.
 
         Parameters:
         cutoff_frequency (float): Desired cutoff frequency in Hz
@@ -99,6 +100,9 @@ class HighPassFilter:
             response = (omega * resistance * capacitance) / np.sqrt(
                 1 + (omega * resistance * capacitance) ** 2
             )
+            phase = np.arctan(
+                1 / (omega * resistance * capacitance)
+            )  # Phase in radians
             title = "Filtre Passe-Haut RC"
 
         elif filter_type == "RL":
@@ -107,6 +111,7 @@ class HighPassFilter:
             response = (omega * inductance / resistance) / np.sqrt(
                 1 + (omega * inductance / resistance) ** 2
             )
+            phase = np.arctan(resistance / (omega * inductance))  # Phase in radians
             title = "Filtre Passe-Haut RL"
 
         elif filter_type == "RLC":
@@ -120,14 +125,19 @@ class HighPassFilter:
                 + (omega * resistance * capacitance) ** 2
             )
             response = numerator / denominator
-            title = "Filtre Passe-Haut RLC Série"
+            phase = np.arctan(
+                (omega * resistance * capacitance)
+                / (1 - omega**2 * inductance * capacitance)
+            )  # Phase in radians
+            title = "Filtre Passe-Haut RLC"
 
         else:
             raise ValueError("Invalid filter type. Choose 'RC', 'RL', or 'RLC'.")
 
-        # Plot the amplitude response
+        # Plot the gain (amplitude response)
         plt.figure(figsize=(10, 6))
-        plt.semilogx(frequencies, 20 * np.log10(response))
+        plt.subplot(2, 1, 1)
+        plt.semilogx(frequencies, 20 * np.log10(response), label="Gain")
         plt.axvline(
             cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
         )
@@ -136,4 +146,17 @@ class HighPassFilter:
         plt.ylabel("Gain (dB)")
         plt.grid(which="both", linestyle="--", linewidth=0.5)
         plt.legend()
+
+        # Plot the phase response
+        plt.subplot(2, 1, 2)
+        plt.semilogx(frequencies, np.degrees(phase), label="Phase", color="orange")
+        plt.axvline(
+            cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
+        )
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Phase (degrés)")
+        plt.grid(which="both", linestyle="--", linewidth=0.5)
+        plt.legend()
+        plt.tight_layout()
         plt.show()
+

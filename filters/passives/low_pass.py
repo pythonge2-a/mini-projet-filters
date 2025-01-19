@@ -107,7 +107,7 @@ class LowPassFilter:
         filter_type="RC",
     ):
         """
-        Plot the Bode diagram for low-pass RC, RL, and RLC filters.
+        Plot the Bode diagram (gain and phase) for low-pass RC, RL, and RLC filters.
 
         Parameters:
         cutoff_frequency (float): Desired cutoff frequency in Hz
@@ -122,13 +122,15 @@ class LowPassFilter:
         if filter_type == "RC":
             if capacitance is None:
                 raise ValueError("Capacitance must be provided for RC filter.")
-            response = 1 / np.sqrt(1 + (omega * resistance * capacitance) ** 2)
+            gain = 1 / np.sqrt(1 + (omega * resistance * capacitance) ** 2)
+            phase = -np.arctan(omega * resistance * capacitance)  # Phase in radians
             title = "Filtre Passe-Bas RC"
 
         elif filter_type == "RL":
             if inductance is None:
                 raise ValueError("Inductance must be provided for RL filter.")
-            response = 1 / np.sqrt(1 + ((omega * inductance) / resistance) ** 2)
+            gain = 1 / np.sqrt(1 + ((omega * inductance) / resistance) ** 2)
+            phase = -np.arctan((omega * inductance) / resistance)  # Phase in radians
             title = "Filtre Passe-Bas RL"
 
         elif filter_type == "RLC":
@@ -142,15 +144,20 @@ class LowPassFilter:
                 + (resistance * capacitance * omega) ** 2
                 - (omega**2) * inductance * capacitance
             )
-            response = numerator / denominator
-            title = "Filtre Passe-Bas RLC Série"
+            gain = numerator / denominator
+            phase = -np.arctan(
+                (resistance * capacitance * omega)
+                / (1 - omega**2 * inductance * capacitance)
+            )
+            title = "Filtre Passe-Bas RLC"
 
         else:
             raise ValueError("Invalid filter type. Choose 'RC', 'RL', or 'RLC'.")
 
         # Plot the amplitude response
         plt.figure(figsize=(10, 6))
-        plt.semilogx(frequencies, 20 * np.log10(response))
+        plt.subplot(2, 1, 1)  # Gain plot
+        plt.semilogx(frequencies, 20 * np.log10(gain), label="Gain")
         plt.axvline(
             cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
         )
@@ -159,4 +166,16 @@ class LowPassFilter:
         plt.ylabel("Gain (dB)")
         plt.grid(which="both", linestyle="--", linewidth=0.5)
         plt.legend()
+
+        # Plot the phase response
+        plt.subplot(2, 1, 2)
+        plt.semilogx(frequencies, np.degrees(phase), label="Phase", color="orange")
+        plt.axvline(
+            cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
+        )
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Phase (degrés)")
+        plt.grid(which="both", linestyle="--", linewidth=0.5)
+        plt.legend()
+        plt.tight_layout()
         plt.show()
