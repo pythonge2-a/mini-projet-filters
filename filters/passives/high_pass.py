@@ -3,84 +3,93 @@ import math
 
 class HighPassFilter:
     @staticmethod
-    def cutoff_frequency_rc(R, C):
+    def highpass_rc(cutoff_frequency, resistance=None, capacitance=None):
         """
-        Calculate the cutoff frequency of a high-pass RC filter.
+        Calculate the components (R or C) for a high-pass RC filter.
 
         Parameters:
-            R (float): Resistance in ohms.
-            C (float): Capacitance in farads.
+        cutoff_frequency (float): Desired cutoff frequency in Hz
+        resistance (float, optional): Resistance in ohms (if known)
+        capacitance (float, optional): Capacitance in farads (if known)
 
-        Returns:
-            float: Cutoff frequency in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "C": value}
         """
-        if R <= 0 or C <= 0:
-            raise ValueError("Resistance and capacitance must be greater than zero.")
-        return 1 / (2 * math.pi * R * C)
+        if not resistance and not capacitance:
+            raise ValueError("Either resistance or capacitance must be provided.")
+
+        if resistance:
+            capacitance = 1 / (2 * math.pi * resistance * cutoff_frequency)
+        elif capacitance:
+            resistance = 1 / (2 * math.pi * capacitance * cutoff_frequency)
+
+        return {"R": resistance, "C": capacitance}
 
     @staticmethod
-    def cutoff_frequency_rl(R, L):
+    def highpass_rl(cutoff_frequency, resistance=None, inductance=None):
         """
-        Calculate the cutoff frequency of a high-pass RL filter.
+        Calculate the components (R or L) for a high-pass RL filter.
 
         Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
+        cutoff_frequency (float): Desired cutoff frequency in Hz
+        resistance (float, optional): Resistance in ohms (if known)
+        inductance (float, optional): Inductance in henries (if known)
 
-        Returns:
-            float: Cutoff frequency in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "L": value}
         """
-        if R <= 0 or L <= 0:
-            raise ValueError("Resistance and inductance must be greater than zero.")
-        return R / (2 * math.pi * L)
+        if not resistance and not inductance:
+            raise ValueError("Either resistance or inductance must be provided.")
+
+        if resistance:
+            inductance = resistance / (2 * math.pi * cutoff_frequency)
+        elif inductance:
+            resistance = 2 * math.pi * cutoff_frequency * inductance
+
+        return {"R": resistance, "L": inductance}
 
     @staticmethod
-    def cutoff_frequency_rlc(L, C):
+    def highpass_rlc_series(cutoff_frequency, quality_factor, resistance=None):
         """
-        Calculate the cutoff frequency of a high-pass RLC filter.
+        Calculate the components (R, L, C) for a high-pass RLC filter in series configuration.
 
         Parameters:
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        cutoff_frequency (float): Desired cutoff frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
 
-        Returns:
-            float: Cutoff frequency in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
         """
-        if L <= 0 or C <= 0:
-            raise ValueError("Inductance and capacitance must be greater than zero.")
-        return 1 / (2 * math.pi * math.sqrt(L * C))
+        omega_c = 2 * math.pi * cutoff_frequency
+
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
+
+        L = resistance / (omega_c * quality_factor)
+        C = quality_factor / (omega_c * resistance)
+
+        return {"R": resistance, "L": L, "C": C}
 
     @staticmethod
-    def quality_factor(R, L, C):
+    def highpass_rlc_parallel(cutoff_frequency, quality_factor, resistance=None):
         """
-        Calculate the quality factor of a high-pass RLC filter.
+        Calculate the components (R, L, C) for a high-pass RLC filter in parallel configuration.
 
         Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        cutoff_frequency (float): Desired cutoff frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
 
-        Returns:
-            float: Quality factor (unitless).
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
         """
-        if R <= 0 or L <= 0 or C <= 0:
-            raise ValueError(
-                "Resistance, inductance, and capacitance must be greater than zero."
-            )
-        return math.sqrt(L / C) / R
+        omega_c = 2 * math.pi * cutoff_frequency
 
-    @staticmethod
-    def bandwidth(cutoff_frequency, quality_factor):
-        """
-        Calculate the bandwidth of a high-pass RLC filter.
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
 
-        Parameters:
-            cutoff_frequency (float): Cutoff frequency in Hz.
-            quality_factor (float): Quality factor (unitless).
+        L = quality_factor * resistance / omega_c
+        C = 1 / (omega_c * resistance * quality_factor)
 
-        Returns:
-            float: Bandwidth in Hz.
-        """
-        if quality_factor <= 0:
-            raise ValueError("Quality factor must be greater than zero.")
-        return cutoff_frequency / quality_factor
+        return {"R": resistance, "L": L, "C": C}
