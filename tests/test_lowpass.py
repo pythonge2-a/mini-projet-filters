@@ -40,33 +40,19 @@ class TestLowPassFilter(unittest.TestCase):
         self.assertAlmostEqual(result["R"], 6.283, places=3)
         print("Low-pass RL Test (Inductance Given):", result)
 
-    def test_lowpass_rlc_series(self):
+    def test_lowpass_rlc(self):
         cutoff_frequency = 1000  # Hz
         quality_factor = 0.707
         resistance = 1000  # Ohms
 
-        result = self.filter.lowpass_rlc_series(
+        result = self.filter.lowpass_rlc(
             cutoff_frequency, quality_factor, resistance=resistance
         )
         self.assertIn("L", result)
         self.assertIn("C", result)
         self.assertAlmostEqual(result["L"], 0.1125, places=3)
         self.assertAlmostEqual(result["C"], 2.25e-7, places=3)
-        print("Low-pass RLC Series Test:", result)
-
-    def test_lowpass_rlc_parallel(self):
-        cutoff_frequency = 1000  # Hz
-        quality_factor = 0.707
-        resistance = 1000  # Ohms
-
-        result = self.filter.lowpass_rlc_parallel(
-            cutoff_frequency, quality_factor, resistance=resistance
-        )
-        self.assertIn("L", result)
-        self.assertIn("C", result)
-        self.assertAlmostEqual(result["L"], 0.225, places=3)
-        self.assertAlmostEqual(result["C"], 1.59e-7, places=3)
-        print("Low-pass RLC Parallel Test:", result)
+        print("Low-pass RLC Test:", result)
 
     def test_lowpass_double_rc(self):
         cutoff_frequency = 1000  # Hz
@@ -93,13 +79,9 @@ class TestLowPassFilter(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.filter.lowpass_rl(1000)
 
-        # Test exception for missing resistance in RLC Series
+        # Test exception for missing resistance in RLC
         with self.assertRaises(ValueError):
-            self.filter.lowpass_rlc_series(1000, 0.707)
-
-        # Test exception for missing resistance in RLC Parallel
-        with self.assertRaises(ValueError):
-            self.filter.lowpass_rlc_parallel(1000, 0.707)
+            self.filter.lowpass_rlc(1000, 0.707)
 
         # Test exception for missing resistance in Double RC
         with self.assertRaises(ValueError):
