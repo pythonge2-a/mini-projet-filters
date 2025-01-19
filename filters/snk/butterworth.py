@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import TransferFunction, bode
 
 class Butterworth_LowPass:
     def __init__(self):    
@@ -203,6 +204,81 @@ class Butterworth_LowPass:
                 return res_value
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
+
+    def graphs(self, order, cutoff_freq, r_vals, c_vals):
+        # Calcul des Fct de transfert des differents etages
+        if order > 10 or order < 1:
+            raise ValueError("Ordre de filtre non Supporté, MAX : 10.")
+        pulsation_w0 = 2 * np.pi * cutoff_freq
+        num_stage = []
+        den_stage = []
+
+        if order % 2 == 0:
+            stage = order / 2
+            for x in range(int(stage)):
+                r1_idx = x * 2
+                r2_idx = r1_idx + 1
+                c1_idx = x * 2
+                c2_idx = r1_idx + 1
+                num = 1
+                num_stage.append(num)
+                den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
+                den_stage.append(den)
+            combined_num = np.polymul(num_stage, 1)
+            combined_den = np.polymul(den_stage, 1)
+            combined_tf = TransferFunction(combined_num, combined_den)
+        elif order % 2 != 0:
+            stage = (order // 2) + 1
+            # ordre paire
+            for x in range(int(stage)):
+                r1_idx = x * 2 - 1
+                r2_idx = r1_idx + 1
+                c1_idx = x * 2 - 1
+                c2_idx = r1_idx + 1
+                if x == 0:
+                    num_stage1 = 1
+                    num_stage.append(num_stage1)
+                    den_stage1 = 1 + r_vals[x] * c_vals[x]
+                    den_stage.append(den_stage1)
+                else:    
+                    num = 1
+                    num_stage.append(num)
+                    den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
+                    den_stage.append(den)
+            combined_num = np.polymul(num_stage, num_stage1)
+            combined_den = np.polymul(den_stage, den_stage1)
+            combined_tf = TransferFunction(combined_num, combined_den)
+
+        # Génère une plage de fréquences logarithmiques entre 10^2 et 10^6 rad/s avec 500 points
+        w2 = np.logspace(2, 6, 500)
+
+        # Calcule la réponse en fréquence (magnitude et phase) pour la fonction de transfert 'combined_tf'
+        # à l'aide des fréquences définies dans 'w2'
+        w2, mag2, phase2 = bode(combined_tf, w=w2)
+        # Convertit les fréquences angulaires (rad/s) en fréquences linéaires (Hz)
+        freq_hz2 = w2 / (2 * np.pi)
+
+        # Crée une figure avec deux sous-graphes empilés pour la magnitude et la phase
+        fig_hp, (ax_mag_hp, ax_phase_hp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+        # Trace la magnitude (en dB) en fonction de la fréquence (Hz) sur une échelle logarithmique
+        ax_mag_hp.semilogx(freq_hz2, mag2, 'b')  # Courbe en bleu
+        ax_mag_hp.set_ylabel('Magnitude (dB)')    # Libellé de l'axe Y pour la magnitude
+
+        # Trace la phase (en degrés) en fonction de la fréquence (Hz) sur une échelle logarithmique
+        ax_phase_hp.semilogx(freq_hz2, phase2, 'r')  # Courbe en rouge
+        ax_phase_hp.set_xlabel('Frequency (Hz)')     # Libellé de l'axe X pour la fréquence
+        ax_phase_hp.set_ylabel('Phase (deg)')        # Libellé de l'axe Y pour la phase
+
+        # Ajoute une grille aux deux sous-graphes pour une meilleure lisibilité
+        ax_phase_hp.grid(True)
+        ax_mag_hp.grid(True)
+
+        # Ajuste automatiquement les espaces entre les sous-graphes pour éviter les chevauchements
+        plt.tight_layout()
+
+        # Affiche le graphique
+        plt.show()
 
 class Butterworth_HighPass:
     def __init__(self):    
@@ -408,3 +484,78 @@ class Butterworth_HighPass:
                     return res_value
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
+            
+    def graphs(self, order, cutoff_freq, r_vals, c_vals):
+        # Calcul des Fct de transfert des differents etages
+        if order > 10 or order < 1:
+            raise ValueError("Ordre de filtre non Supporté, MAX : 10.")
+        pulsation_w0 = 2 * np.pi * cutoff_freq
+        num_stage = []
+        den_stage = []
+
+        if order % 2 == 0:
+            stage = order / 2
+            for x in range(int(stage)):
+                r1_idx = x * 2
+                r2_idx = r1_idx + 1
+                c1_idx = x * 2
+                c2_idx = r1_idx + 1
+                num = r_vals[r1_idx] * r_vals[r2_idx] * c_vals[c1_idx] * c_vals[c2_idx]
+                num_stage.append(num)
+                den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
+                den_stage.append(den)
+            combined_num = np.polymul(num_stage)
+            combined_den = np.polymul(den_stage)
+            combined_tf = TransferFunction(combined_num, combined_den)
+        elif order % 2 != 0:
+            stage = (order // 2) + 1
+            # ordre paire
+            for x in range(int(stage)):
+                r1_idx = x * 2 - 1
+                r2_idx = r1_idx + 1
+                c1_idx = x * 2 - 1
+                c2_idx = r1_idx + 1
+                if x == 0:
+                    num_stage1 = r_vals[x] * c_vals[x]
+                    num_stage.append(num_stage1, 1)
+                    den_stage1 = 1 + r_vals[x] * c_vals[x]
+                    den_stage.append(den_stage1, 1)
+                else:    
+                    num = r_vals[r1_idx] * r_vals[r2_idx] * c_vals[c1_idx] * c_vals[c2_idx]
+                    num_stage.append(num)
+                    den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
+                    den_stage.append(den)
+            combined_num = np.polymul(num_stage, num_stage1)
+            combined_den = np.polymul(den_stage, den_stage1)
+            combined_tf = TransferFunction(combined_num, combined_den)
+
+        # Génère une plage de fréquences logarithmiques entre 10^2 et 10^6 rad/s avec 500 points
+        w2 = np.logspace(2, 6, 500)
+
+        # Calcule la réponse en fréquence (magnitude et phase) pour la fonction de transfert 'combined_tf'
+        # à l'aide des fréquences définies dans 'w2'
+        w2, mag2, phase2 = bode(combined_tf, w=w2)
+        # Convertit les fréquences angulaires (rad/s) en fréquences linéaires (Hz)
+        freq_hz2 = w2 / (2 * np.pi)
+
+        # Crée une figure avec deux sous-graphes empilés pour la magnitude et la phase
+        fig_hp, (ax_mag_hp, ax_phase_hp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+        # Trace la magnitude (en dB) en fonction de la fréquence (Hz) sur une échelle logarithmique
+        ax_mag_hp.semilogx(freq_hz2, mag2, 'b')  # Courbe en bleu
+        ax_mag_hp.set_ylabel('Magnitude (dB)')    # Libellé de l'axe Y pour la magnitude
+
+        # Trace la phase (en degrés) en fonction de la fréquence (Hz) sur une échelle logarithmique
+        ax_phase_hp.semilogx(freq_hz2, phase2, 'r')  # Courbe en rouge
+        ax_phase_hp.set_xlabel('Frequency (Hz)')     # Libellé de l'axe X pour la fréquence
+        ax_phase_hp.set_ylabel('Phase (deg)')        # Libellé de l'axe Y pour la phase
+
+        # Ajoute une grille aux deux sous-graphes pour une meilleure lisibilité
+        ax_phase_hp.grid(True)
+        ax_mag_hp.grid(True)
+
+        # Ajuste automatiquement les espaces entre les sous-graphes pour éviter les chevauchements
+        plt.tight_layout()
+
+        # Affiche le graphique
+        plt.show()
