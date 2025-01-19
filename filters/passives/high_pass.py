@@ -1,4 +1,6 @@
 import math
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class HighPassFilter:
@@ -49,9 +51,9 @@ class HighPassFilter:
         return {"R": resistance, "L": inductance}
 
     @staticmethod
-    def highpass_rlc_series(cutoff_frequency, quality_factor, resistance=None):
+    def highpass_rlc(cutoff_frequency, quality_factor, resistance=None):
         """
-        Calculate the components (R, L, C) for a high-pass RLC filter in series configuration.
+        Calculate the components (R, L, C) for a high-pass RLC filter.
 
         Parameters:
         cutoff_frequency (float): Desired cutoff frequency in Hz
@@ -71,25 +73,67 @@ class HighPassFilter:
 
         return {"R": resistance, "L": L, "C": C}
 
-    @staticmethod
-    def highpass_rlc_parallel(cutoff_frequency, quality_factor, resistance=None):
+    def bode_plot(
+        cutoff_frequency,
+        resistance,
+        inductance=None,
+        capacitance=None,
+        filter_type="RC",
+    ):
         """
-        Calculate the components (R, L, C) for a high-pass RLC filter in parallel configuration.
+        Plot the Bode diagram for high-pass RC, RL, and RLC filters.
 
         Parameters:
         cutoff_frequency (float): Desired cutoff frequency in Hz
-        quality_factor (float): Desired quality factor (Q)
-        resistance (float, optional): Resistance in ohms (if known)
-
-        Return:
-        dict: Calculated component values {"R": value, "L": value, "C": value}
+        resistance (float): Resistance in ohms
+        inductance (float, optional): Inductance in henries (for RL or RLC filters)
+        capacitance (float, optional): Capacitance in farads (for RC or RLC filters)
+        filter_type (str): Type of the filter ("RC", "RL", "RLC")
         """
-        omega_c = 2 * math.pi * cutoff_frequency
+        frequencies = np.logspace(1, 6, 500)  # Frequency range: 10 Hz to 1 MHz
+        omega = 2 * np.pi * frequencies
 
-        if not resistance:
-            raise ValueError("Resistance must be provided for RLC calculations.")
+        if filter_type == "RC":
+            if capacitance is None:
+                raise ValueError("Capacitance must be provided for RC filter.")
+            response = (omega * resistance * capacitance) / np.sqrt(
+                1 + (omega * resistance * capacitance) ** 2
+            )
+            title = "Filtre Passe-Haut RC"
 
-        L = quality_factor * resistance / omega_c
-        C = 1 / (omega_c * resistance * quality_factor)
+        elif filter_type == "RL":
+            if inductance is None:
+                raise ValueError("Inductance must be provided for RL filter.")
+            response = (omega * inductance / resistance) / np.sqrt(
+                1 + (omega * inductance / resistance) ** 2
+            )
+            title = "Filtre Passe-Haut RL"
 
-        return {"R": resistance, "L": L, "C": C}
+        elif filter_type == "RLC":
+            if inductance is None or capacitance is None:
+                raise ValueError(
+                    "Inductance and capacitance must be provided for RLC filter."
+                )
+            numerator = omega**2 * inductance * capacitance
+            denominator = np.sqrt(
+                (1 - (omega**2) * inductance * capacitance) ** 2
+                + (omega * resistance * capacitance) ** 2
+            )
+            response = numerator / denominator
+            title = "Filtre Passe-Haut RLC Série"
+
+        else:
+            raise ValueError("Invalid filter type. Choose 'RC', 'RL', or 'RLC'.")
+
+        # Plot the amplitude response
+        plt.figure(figsize=(10, 6))
+        plt.semilogx(frequencies, 20 * np.log10(response))
+        plt.axvline(
+            cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
+        )
+        plt.title(f"Diagramme de Bode - {title}")
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Gain (dB)")
+        plt.grid(which="both", linestyle="--", linewidth=0.5)
+        plt.legend()
+        plt.show()
