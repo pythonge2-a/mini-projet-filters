@@ -1,68 +1,126 @@
 import math
 
+
 class BandPassFilter:
     @staticmethod
-    def order_1_resonant_frequency(R, L):
+    def bandpass_rc(resonant_frequency, bandwidth, resistance=None, capacitance=None):
         """
-        Calculate the resonant frequency of a band-pass RLC filter order 1.
+        Calculate the components (R or C) for a band-pass RC filter of order 1.
 
         Parameters:
-            R (float): Resistance in ohms.
-            C (float): Capacitance in farads.
+        resonant_frequency (float): Desired resonant frequency in Hz
+        bandwidth (float): Desired bandwidth in Hz
+        resistance (float, optional): Resistance in ohms (if known)
+        capacitance (float, optional): Capacitance in farads (if known)
 
-        Returns:
-            float: Resonant frequency in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "C": value}
         """
-        if L == 0 or R == 0:
-            raise ValueError("Inductance and resistance must be non-zero.")
-        return R / (2 * math.pi * L)
+        omega_bw = 2 * math.pi * bandwidth
 
-    #The following code is for a Band Pass Filter of order 2
-    @staticmethod
-    def resonant_frequency(L, C):
-        """
-        Calculate the resonant frequency of a band-pass RLC filter.
+        if not resistance and not capacitance:
+            raise ValueError("Either resistance or capacitance must be provided.")
 
-        Parameters:
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        if resistance:
+            capacitance = 1 / (omega_bw * resistance)
+        elif capacitance:
+            resistance = 1 / (omega_bw * capacitance)
 
-        Returns:
-            float: Resonant frequency in Hz.
-        """
-        if L == 0 or C == 0:
-            raise ValueError("Inductance and capacitance must be non-zero.")
-        return 1 / (2 * math.pi * math.sqrt(L * C))
+        return {"R": resistance, "C": capacitance}
 
     @staticmethod
-    def quality_factor(R, L, C):
+    def bandpass_rl(resonant_frequency, bandwidth, resistance=None, inductance=None):
         """
-        Calculate the quality factor of a band-pass RLC filter.
+        Calculate the components (R or L) for a band-pass RL filter of order 1.
 
         Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        resonant_frequency (float): Desired resonant frequency in Hz
+        bandwidth (float): Desired bandwidth in Hz
+        resistance (float, optional): Resistance in ohms (if known)
+        inductance (float, optional): Inductance in henries (if known)
 
-        Returns:
-            float: Quality factor (unitless).
+        Return:
+        dict: Calculated component values {"R": value, "L": value}
         """
-        if L == 0 or C == 0:
-            raise ValueError("Inductance and capacitance must be non-zero.")
-        return math.sqrt(L / C) / R
+        omega_bw = 2 * math.pi * bandwidth
+
+        if not resistance and not inductance:
+            raise ValueError("Either resistance or inductance must be provided.")
+
+        if resistance:
+            inductance = resistance / omega_bw
+        elif inductance:
+            resistance = omega_bw * inductance
+
+        return {"R": resistance, "L": inductance}
 
     @staticmethod
-    def bandwidth(resonant_frequency, quality_factor):
+    def bandpass_rlc_series(resonant_frequency, quality_factor, resistance=None):
         """
-        Calculate the bandwidth of a band-pass RLC filter.
+        Calculate the components (R, L, C) for a band-pass RLC filter in series configuration.
 
         Parameters:
-            resonant_frequency (float): Resonant frequency in Hz.
-            quality_factor (float): Quality factor (unitless).
+        resonant_frequency (float): Desired resonant frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
 
-        Returns:
-            float: Bandwidth in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
         """
-        if quality_factor == 0:
-            raise ValueError("Quality factor must be non-zero.")
-        return resonant_frequency / quality_factor
+        omega_0 = 2 * math.pi * resonant_frequency
+
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
+
+        L = quality_factor * resistance / omega_0
+        C = 1 / (omega_0**2 * L)
+
+        return {"R": resistance, "L": L, "C": C}
+
+    @staticmethod
+    def bandpass_rlc_parallel(resonant_frequency, quality_factor, resistance=None):
+        """
+        Calculate the components (R, L, C) for a band-pass RLC filter in parallel configuration.
+
+        Parameters:
+        resonant_frequency (float): Desired resonant frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
+
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
+        """
+        omega_0 = 2 * math.pi * resonant_frequency
+
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
+
+        C = quality_factor / (omega_0 * resistance)
+        L = resistance / (omega_0 * quality_factor)
+
+        return {"R": resistance, "L": L, "C": C}
+
+    @staticmethod
+    def bandpass_double_rc(resonant_frequency, bandwidth, resistance=None):
+        """
+        Calculate the components (R1, R2, C1, C2) for a band-pass RC filter of order 2.
+
+        Parameters:
+        resonant_frequency (float): Desired resonant frequency in Hz
+        bandwidth (float): Desired bandwidth in Hz
+        resistance (float, optional): Shared resistance in ohms (if known)
+
+        Return:
+        dict: Calculated component values {"R1": value, "R2": value, "C1": value, "C2": value}
+        """
+        omega_bw = 2 * math.pi * bandwidth
+
+        if not resistance:
+            raise ValueError("Resistance must be provided for RC calculations.")
+
+        R1 = resistance
+        R2 = resistance
+        C1 = 1 / (omega_bw * R1)
+        C2 = 1 / (omega_bw * R2)
+
+        return {"R1": R1, "R2": R2, "C1": C1, "C2": C2}

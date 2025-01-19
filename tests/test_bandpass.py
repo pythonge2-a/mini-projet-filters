@@ -18,7 +18,7 @@ class TestBandPassFilter(unittest.TestCase):
         )
         self.assertIn("L", result)
         self.assertAlmostEqual(
-            result["L"], resistance / (2 * math.pi * bandwidth), places=3
+            result["L"], resistance / (2 * math.pi * bandwidth), places=6
         )
         print("Band-pass RL Test (Resistance Given):", result)
 
@@ -29,7 +29,7 @@ class TestBandPassFilter(unittest.TestCase):
         )
         self.assertIn("R", result)
         self.assertAlmostEqual(
-            result["R"], 2 * math.pi * bandwidth * inductance, places=3
+            result["R"], 2 * math.pi * bandwidth * inductance, places=6
         )
         print("Band-pass RL Test (Inductance Given):", result)
 
@@ -45,9 +45,9 @@ class TestBandPassFilter(unittest.TestCase):
         self.assertIn("C", result)
         omega_0 = 2 * math.pi * resonant_frequency
         self.assertAlmostEqual(
-            result["L"], quality_factor * resistance / omega_0, places=3
+            result["L"], quality_factor * resistance / omega_0, places=6
         )
-        self.assertAlmostEqual(result["C"], 1 / (omega_0**2 * result["L"]), places=3)
+        self.assertAlmostEqual(result["C"], 1 / (omega_0**2 * result["L"]), places=10)
         print("Band-pass RLC Series Test:", result)
 
     def test_bandpass_rlc_parallel(self):
@@ -62,10 +62,10 @@ class TestBandPassFilter(unittest.TestCase):
         self.assertIn("C", result)
         omega_0 = 2 * math.pi * resonant_frequency
         self.assertAlmostEqual(
-            result["C"], quality_factor / (omega_0 * resistance), places=3
+            result["C"], quality_factor / (omega_0 * resistance), places=10
         )
         self.assertAlmostEqual(
-            result["L"], resistance / (omega_0 * quality_factor), places=3
+            result["L"], resistance / (omega_0 * quality_factor), places=6
         )
         print("Band-pass RLC Parallel Test:", result)
 
@@ -82,8 +82,8 @@ class TestBandPassFilter(unittest.TestCase):
         self.assertIn("C1", result)
         self.assertIn("C2", result)
         omega_bw = 2 * math.pi * bandwidth
-        self.assertAlmostEqual(result["C1"], 1 / (omega_bw * resistance), places=3)
-        self.assertAlmostEqual(result["C2"], 1 / (omega_bw * resistance), places=3)
+        self.assertAlmostEqual(result["C1"], 1 / (omega_bw * resistance), places=10)
+        self.assertAlmostEqual(result["C2"], 1 / (omega_bw * resistance), places=10)
         print("Band-pass Double RC Test:", result)
 
     def test_bandpass_rc(self):
@@ -97,7 +97,7 @@ class TestBandPassFilter(unittest.TestCase):
         )
         self.assertIn("C", result)
         omega_bw = 2 * math.pi * bandwidth
-        self.assertAlmostEqual(result["C"], 1 / (omega_bw * resistance), places=3)
+        self.assertAlmostEqual(result["C"], 1 / (omega_bw * resistance), places=10)
         print("Band-pass RC Test (Resistance Given):", result)
 
         # Test avec capacité donnée
@@ -106,7 +106,7 @@ class TestBandPassFilter(unittest.TestCase):
             resonant_frequency, bandwidth, capacitance=capacitance
         )
         self.assertIn("R", result)
-        self.assertAlmostEqual(result["R"], 1 / (omega_bw * capacitance), places=3)
+        self.assertAlmostEqual(result["R"], 1 / (omega_bw * capacitance), places=6)
         print("Band-pass RC Test (Capacitance Given):", result)
 
     def test_exceptions(self):
