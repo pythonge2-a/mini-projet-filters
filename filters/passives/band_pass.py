@@ -1,4 +1,6 @@
 import math
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class BandPassFilter:
@@ -124,3 +126,60 @@ class BandPassFilter:
         C2 = 1 / (omega_bw * R2)
 
         return {"R1": R1, "R2": R2, "C1": C1, "C2": C2}
+
+    @staticmethod
+    def bode_plot(resonant_frequency, quality_factor, resistance):
+        """
+        Plot the Bode diagram (gain and phase) for band-pass filter.
+
+        Parameters:
+        resonant_frequency (float): Resonant frequency in Hz
+        quality_factor (float): Quality factor (Q)
+        resistance (float): Resistance in ohms
+        """
+        frequencies = np.logspace(1, 6, 500)  # Fréquences de 10 Hz à 1 MHz
+        omega = 2 * np.pi * frequencies
+        omega_0 = 2 * np.pi * resonant_frequency
+
+        C = quality_factor / (omega_0 * resistance)
+        L = resistance / (omega_0 * quality_factor)
+
+        gain = (
+            omega
+            * resistance
+            * C
+            / np.sqrt((1 - (omega**2) * L * C) ** 2 + (omega * resistance * C) ** 2)
+        )
+        phase = -np.arctan((omega * L - 1 / (omega * C)) / resistance) * (180 / np.pi)
+
+        # Plot the amplitude response
+        plt.figure(figsize=(10, 8))
+        plt.subplot(2, 1, 1)
+        plt.semilogx(frequencies, 20 * np.log10(gain))
+        plt.axvline(
+            resonant_frequency,
+            color="red",
+            linestyle="--",
+            label="Fréquence de résonance",
+        )
+        plt.title("Diagramme de Bode - Filtre Passe-Bande")
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Gain (dB)")
+        plt.grid(which="both", linestyle="--", linewidth=0.5)
+        plt.legend()
+
+        # Plot the phase response
+        plt.subplot(2, 1, 2)
+        plt.semilogx(frequencies, phase, color="orange", label="Phase")
+        plt.axvline(
+            resonant_frequency,
+            color="red",
+            linestyle="--",
+            label="Fréquence de résonance",
+        )
+        plt.xlabel("Fréquence (Hz)")
+        plt.ylabel("Phase (degrés)")
+        plt.grid(which="both", linestyle="--", linewidth=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()

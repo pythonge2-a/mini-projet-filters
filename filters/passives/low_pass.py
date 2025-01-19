@@ -138,13 +138,11 @@ class LowPassFilter:
                 raise ValueError(
                     "Inductance and capacitance must be provided for RLC filter."
                 )
-            numerator = 1
-            denominator = np.sqrt(
+            gain = 1 / np.sqrt(
                 1
                 + (resistance * capacitance * omega) ** 2
                 - (omega**2) * inductance * capacitance
             )
-            gain = numerator / denominator
             phase = -np.arctan(
                 (resistance * capacitance * omega)
                 / (1 - omega**2 * inductance * capacitance)

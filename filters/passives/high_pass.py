@@ -97,7 +97,7 @@ class HighPassFilter:
         if filter_type == "RC":
             if capacitance is None:
                 raise ValueError("Capacitance must be provided for RC filter.")
-            response = (omega * resistance * capacitance) / np.sqrt(
+            gain = (omega * resistance * capacitance) / np.sqrt(
                 1 + (omega * resistance * capacitance) ** 2
             )
             phase = np.arctan(
@@ -108,7 +108,7 @@ class HighPassFilter:
         elif filter_type == "RL":
             if inductance is None:
                 raise ValueError("Inductance must be provided for RL filter.")
-            response = (omega * inductance / resistance) / np.sqrt(
+            gain = (omega * inductance / resistance) / np.sqrt(
                 1 + (omega * inductance / resistance) ** 2
             )
             phase = np.arctan(resistance / (omega * inductance))  # Phase in radians
@@ -119,12 +119,15 @@ class HighPassFilter:
                 raise ValueError(
                     "Inductance and capacitance must be provided for RLC filter."
                 )
-            numerator = omega**2 * inductance * capacitance
-            denominator = np.sqrt(
-                (1 - (omega**2) * inductance * capacitance) ** 2
-                + (omega * resistance * capacitance) ** 2
+            gain = (
+                omega**2
+                * inductance
+                * capacitance
+                / np.sqrt(
+                    (1 - (omega**2) * inductance * capacitance) ** 2
+                    + (omega * resistance * capacitance) ** 2
+                )
             )
-            response = numerator / denominator
             phase = np.arctan(
                 (omega * resistance * capacitance)
                 / (1 - omega**2 * inductance * capacitance)
@@ -137,7 +140,7 @@ class HighPassFilter:
         # Plot the gain (amplitude response)
         plt.figure(figsize=(10, 6))
         plt.subplot(2, 1, 1)
-        plt.semilogx(frequencies, 20 * np.log10(response), label="Gain")
+        plt.semilogx(frequencies, 20 * np.log10(gain), label="Gain")
         plt.axvline(
             cutoff_frequency, color="red", linestyle="--", label="Fréquence de coupure"
         )
@@ -159,4 +162,3 @@ class HighPassFilter:
         plt.legend()
         plt.tight_layout()
         plt.show()
-
