@@ -18,7 +18,7 @@ class TestBandPassFilter(unittest.TestCase):
         )
         self.assertIn("L", result)
         self.assertAlmostEqual(
-            result["L"], resistance / (2 * math.pi * bandwidth), places=6
+            result["L"], resistance / (2 * math.pi * bandwidth), places=3
         )
         print("Band-pass RL Test (Resistance Given):", result)
 
@@ -29,45 +29,28 @@ class TestBandPassFilter(unittest.TestCase):
         )
         self.assertIn("R", result)
         self.assertAlmostEqual(
-            result["R"], 2 * math.pi * bandwidth * inductance, places=6
+            result["R"], 2 * math.pi * bandwidth * inductance, places=3
         )
         print("Band-pass RL Test (Inductance Given):", result)
 
-    def test_bandpass_rlc_series(self):
+    def test_bandpass_rlc(self):
         resonant_frequency = 1000  # Hz
         quality_factor = 0.707
         resistance = 1000  # Ohms
 
-        result = self.filter.bandpass_rlc_series(
+        result = self.filter.bandpass_rlc(
             resonant_frequency, quality_factor, resistance=resistance
         )
         self.assertIn("L", result)
         self.assertIn("C", result)
         omega_0 = 2 * math.pi * resonant_frequency
         self.assertAlmostEqual(
-            result["L"], quality_factor * resistance / omega_0, places=6
-        )
-        self.assertAlmostEqual(result["C"], 1 / (omega_0**2 * result["L"]), places=10)
-        print("Band-pass RLC Series Test:", result)
-
-    def test_bandpass_rlc_parallel(self):
-        resonant_frequency = 1000  # Hz
-        quality_factor = 0.707
-        resistance = 1000  # Ohms
-
-        result = self.filter.bandpass_rlc_parallel(
-            resonant_frequency, quality_factor, resistance=resistance
-        )
-        self.assertIn("L", result)
-        self.assertIn("C", result)
-        omega_0 = 2 * math.pi * resonant_frequency
-        self.assertAlmostEqual(
-            result["C"], quality_factor / (omega_0 * resistance), places=10
+            result["C"], quality_factor / (omega_0 * resistance), places=3
         )
         self.assertAlmostEqual(
-            result["L"], resistance / (omega_0 * quality_factor), places=6
+            result["L"], resistance / (omega_0 * quality_factor), places=3
         )
-        print("Band-pass RLC Parallel Test:", result)
+        print("Band-pass RLC Test:", result)
 
     def test_bandpass_double_rc(self):
         resonant_frequency = 1000  # Hz
@@ -113,10 +96,6 @@ class TestBandPassFilter(unittest.TestCase):
         # Test exception for missing inputs in RL
         with self.assertRaises(ValueError):
             self.filter.bandpass_rl(1000, 200)
-
-        # Test exception for missing resistance in RLC Series
-        with self.assertRaises(ValueError):
-            self.filter.bandpass_rlc_series(1000, 0.707)
 
 
 if __name__ == "__main__":

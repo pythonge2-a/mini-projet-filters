@@ -57,32 +57,9 @@ class BandPassFilter:
         return {"R": resistance, "L": inductance}
 
     @staticmethod
-    def bandpass_rlc_series(resonant_frequency, quality_factor, resistance=None):
+    def bandpass_rlc(resonant_frequency, quality_factor, resistance=None):
         """
-        Calculate the components (R, L, C) for a band-pass RLC filter in series configuration.
-
-        Parameters:
-        resonant_frequency (float): Desired resonant frequency in Hz
-        quality_factor (float): Desired quality factor (Q)
-        resistance (float, optional): Resistance in ohms (if known)
-
-        Return:
-        dict: Calculated component values {"R": value, "L": value, "C": value}
-        """
-        omega_0 = 2 * math.pi * resonant_frequency
-
-        if not resistance:
-            raise ValueError("Resistance must be provided for RLC calculations.")
-
-        L = quality_factor * resistance / omega_0
-        C = 1 / (omega_0**2 * L)
-
-        return {"R": resistance, "L": L, "C": C}
-
-    @staticmethod
-    def bandpass_rlc_parallel(resonant_frequency, quality_factor, resistance=None):
-        """
-        Calculate the components (R, L, C) for a band-pass RLC filter in parallel configuration.
+        Calculate the components (R, L, C) for a band-pass RLC filter.
 
         Parameters:
         resonant_frequency (float): Desired resonant frequency in Hz
