@@ -137,7 +137,7 @@ class HighPassFilter:
         else:
             raise ValueError("Invalid filter type. Choose 'RC', 'RL', or 'RLC'.")
 
-        # Plot the gain (amplitude response)
+        # Plot the amplitude response
         plt.figure(figsize=(10, 6))
         plt.subplot(2, 1, 1)
         plt.semilogx(frequencies, 20 * np.log10(gain), label="Gain")

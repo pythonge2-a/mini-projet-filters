@@ -59,7 +59,7 @@ class BandStopFilter:
             linestyle="--",
             label="Fréquence de résonance",
         )
-        plt.title("Diagramme de Bode")
+        plt.title("Diagramme de Bode - Filtre Coupe-Bande")
         plt.xlabel("Fréquence (Hz)")
         plt.ylabel("Gain (dB)")
         plt.grid(which="both", linestyle="--", linewidth=0.5)
