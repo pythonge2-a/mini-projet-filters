@@ -3,98 +3,47 @@ import math
 
 class BandStopFilter:
     @staticmethod
-    def resonant_frequency_order_1(R, L):
+    def bandstop_rlc_series(center_frequency, quality_factor, resistance=None):
         """
-        Calculate the resonant frequency of a band-stop RL filter (order 1).
+        Calculate the components (R, L, C) for a band-stop RLC filter in series configuration.
 
         Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
+        center_frequency (float): Desired center frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
 
-        Returns:
-            float: Resonant frequency in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
         """
-        if R == 0 or L == 0:
-            raise ValueError("Resistance and inductance must be non-zero.")
-        return R / (2 * math.pi * L)
+        omega_0 = 2 * math.pi * center_frequency
 
-    # order 2
-    @staticmethod
-    def resonant_frequency_order_2(L, C):
-        """
-        Calculate the resonant frequency of a band-stop RLC filter (order 2).
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
 
-        Parameters:
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        L = quality_factor * resistance / omega_0
+        C = 1 / (omega_0**2 * L)
 
-        Returns:
-            float: Resonant frequency in Hz.
-        """
-        if L == 0 or C == 0:
-            raise ValueError("Inductance and capacitance must be non-zero.")
-        return 1 / (2 * math.pi * math.sqrt(L * C))
+        return {"R": resistance, "L": L, "C": C}
 
     @staticmethod
-    def bandwidth(R, L, C):
+    def bandstop_rlc_parallel(center_frequency, quality_factor, resistance=None):
         """
-        Calculate the bandwidth of a band-stop RLC filter (order 2).
+        Calculate the components (R, L, C) for a band-stop RLC filter in parallel configuration.
 
         Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        center_frequency (float): Desired center frequency in Hz
+        quality_factor (float): Desired quality factor (Q)
+        resistance (float, optional): Resistance in ohms (if known)
 
-        Returns:
-            float: Bandwidth in Hz.
+        Return:
+        dict: Calculated component values {"R": value, "L": value, "C": value}
         """
-        if R == 0 or L == 0 or C == 0:
-            raise ValueError(
-                "Resistance, inductance, and capacitance must be non-zero."
-            )
-        return R / (2 * math.pi * L)
+        omega_0 = 2 * math.pi * center_frequency
 
-    @staticmethod
-    def quality_factor_order_2(R, L, C):
-        """
-        Calculate the quality factor of a band-stop RLC filter (order 2).
+        if not resistance:
+            raise ValueError("Resistance must be provided for RLC calculations.")
 
-        Parameters:
-            R (float): Resistance in ohms.
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
+        C = quality_factor / (omega_0 * resistance)
+        L = resistance / (omega_0 * quality_factor)
 
-        Returns:
-            float: Quality factor (unitless).
-        """
-        if L == 0 or C == 0 or R == 0:
-            raise ValueError(
-                "Resistance, inductance, and capacitance must be non-zero."
-            )
-        resonant_frequency = BandStopFilter.resonant_frequency_order_2(L, C)
-        bandwidth = BandStopFilter.bandwidth_order_2(R, L, C)
-        return resonant_frequency / bandwidth
-
-    @staticmethod
-    def cutoff_frequencies_order_2(L, C, R):
-        """
-        Calculate the cutoff frequencies (f_c1 and f_c2) for a band-stop RLC filter (order 2).
-
-        Parameters:
-            L (float): Inductance in henries.
-            C (float): Capacitance in farads.
-            R (float): Resistance in ohms.
-
-        Returns:
-            tuple: Lower cutoff frequency (f_c1) and upper cutoff frequency (f_c2).
-        """
-        if L == 0 or C == 0 or R == 0:
-            raise ValueError(
-                "Inductance, capacitance, and resistance must be non-zero."
-            )
-
-        f0 = BandStopFilter.resonant_frequency_order_2(L, C)
-        BW = BandStopFilter.bandwidth_order_2(R, L, C)
-        f_c1 = f0 - (BW / 2)
-        f_c2 = f0 + (BW / 2)
-        return f_c1, f_c2
+        return {"R": resistance, "L": L, "C": C}
