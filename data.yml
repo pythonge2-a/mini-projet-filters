@@ -1,0 +1,12 @@
+filters:
+  ButterWorth:
+    lowpass:
+      order:
+        1: 
+          - q: 0
+          - w: 234
+    highpass:
+      order:
+        1:
+          - q:
+          - w:

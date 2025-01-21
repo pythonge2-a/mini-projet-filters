@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "filters"
+version = "0.1.0"
+description = ""
+authors = [
+    "Maxime Magnenat <maxime.magnenat@heig-vd.ch>",
+    "Francisco Oliveira Barbosa <francisco.oliveirabarbosa@heig-vd.ch>",
+    "Maxime Otero <maxime.otero@heig-vd.ch>",
+    "Sebastien Pfister <sebastien.pfister@heig-vd.ch>",
+    "David Vuillemier <david.vuillemier@heig-vd.ch>"
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
