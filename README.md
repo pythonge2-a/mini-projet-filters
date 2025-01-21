@@ -38,36 +38,80 @@ Nous devrons respecter les délais imposés par notre professeur et lui fournir 
 ## Calculs en détails
 ### ButterWorth
 #### Passe Bas
-Fonction de transfert est donnée par : 
-H(jw) = 1 / (1+jw(R1+R2) + C1*C2*R1*R2*(jw)^2)
+La fonction de transfert est donnée par :
+$$
+H(j\omega) = \frac{1}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
+$$
 
 Quand les condensateurs sont inconnus :
-C2 = 1 / ((R1+R2)*W0*Q0)
-C1 = (R1+R2)*Q0 / R1*R2*W0
+$$
+C_2 = \frac{1}{(R_1 + R_2) \cdot \omega_0 \cdot Q_0}
+$$
+$$
+C_1 = \frac{(R_1 + R_2) \cdot Q_0}{R_1 \cdot R_2 \cdot \omega_0}
+$$
 
 Quand les résistances sont inconnues :
-Une contrainte est imposé qui est : C1 >= 4*Q0^2*C2
-Donc : R1+R2 = 1 / C2*W0*Q0
-R1*R2 = 1 / C1*C2*W0^2
-On en tire donc : R1 = (1 / C2*W0*Q0) - R2
-et R2^2 - (1 / C2*W0*Q0)*R2 + (1 / C1*C2*W0^2) = 0
-R2 = le résultat de ce trinôme
+Une contrainte est imposée :
+$$
+C_1 \geq 4 \cdot Q_0^2 \cdot C_2
+$$
+
+On obtient :
+$$
+R_1 + R_2 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0}
+$$
+$$
+R_1 \cdot R_2 = \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2}
+$$
+En résolvant :
+$$
+R_1 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0} - R_2
+$$
+$$
+R_2^2 - \left(\frac{1}{C_2 \cdot \omega_0 \cdot Q_0}\right) \cdot R_2 + \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2} = 0
+$$
+$$
+R_2 = \text{solution du trinôme}
+$$
 
 #### Passe Haut
-Fonction de transfert est donnée par : 
-H(jw) = C1*C2*R1*R2*(jw)^2 / (1+jw(R1+R2) + C1*C2*R1*R2*(jw)^2)
-
-Quand les resistances sont inconnus :
-C2 = 1 / ((R1+R2)*W0*Q0)
-C1 = (R1+R2)*Q0 / R1*R2*W0
+La fonction de transfert est donnée par :
+$$
+H(j\omega) = \frac{C_1 C_2 R_1 R_2 (j\omega)^2}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
+$$
 
 Quand les résistances sont inconnues :
-Une contrainte est imposé qui est : C1 >= 4*Q0^2*C2
-Donc : R1+R2 = 1 / C2*W0*Q0
-R1*R2 = 1 / C1*C2*W0^2
-On en tire donc : R1 = (1 / C2*W0*Q0) - R2
-et R2^2 - (1 / C2*W0*Q0)*R2 + (1 / C1*C2*W0^2) = 0
-R2 = le résultat de ce trinôme
+$$
+R_1 = \frac{1}{(C_1 + C_2) \cdot \omega_0 \cdot Q_0}
+$$
+$$
+R_2 = \frac{(C_1 + C_2) \cdot Q_0}{C_1 \cdot C_2 \cdot \omega_0}
+$$
+
+Quand les condensateurs sont inconnus :
+Une contrainte est imposée :
+$$
+R_2 \geq 4 \cdot Q_0^2 \cdot R_1
+$$
+
+On obtient :
+$$
+C_1 + C_2 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0}
+$$
+$$
+C_1 \cdot C_2 = \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2}
+$$
+En résolvant :
+$$
+C_1 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0} - C_2
+$$
+$$
+C_2^2 - \left(\frac{1}{R_1 \cdot \omega_0 \cdot Q_0}\right) \cdot C_2 + \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2} = 0
+$$
+$$
+C_2 = \text{solution du trinôme}
+$$
 
 ## Installation
 
