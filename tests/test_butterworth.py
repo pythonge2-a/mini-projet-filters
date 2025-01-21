@@ -132,7 +132,6 @@ class TestButterWorthFilters(unittest.TestCase):
     def test_third_order_highpass_invalid_resistances(self): # Test pour une erreur au cas ou la condition n'est pas respecter
         order = 3
         res_values = [1000, 5000, 12000]  # Résistances spécifiées
-        condos_wanted = ValueError  # Valeur attendue à la sortie de la fonction
 
         # Vérification qu'un ValueError est levé
         with self.assertRaises(ValueError) as context:
