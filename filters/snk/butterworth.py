@@ -205,81 +205,84 @@ class Butterworth_LowPass:
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
 
-    def graphs(self, order, cutoff_freq, r_vals, c_vals):
+    def graphs(self, order, cutoff_frequency=None,res_values=None, condo_values=None):
         # Calcul des Fct de transfert des differents etages
         if order > 10 or order < 1:
-            raise ValueError("Ordre de filtre non Supporté, MAX : 10.")
-        pulsation_w0 = 2 * np.pi * cutoff_freq
-        num_stage = []
-        den_stage = []
+            raise ValueError(f"L'ordre {order} n'est pas supporté.")   
+        num_combined = []
+        den_combined = []
+        if cutoff_frequency is not None:    # Si une frequence de coupure est donnée
+            # *Pour avoir un graphe qui est toujours dans les bonnes plages
+            freq_min_hz = cutoff_frequency / 10_000  # 10^(-4) fois la fréquence de coupure
+            freq_max_hz = cutoff_frequency * 10_000  # 10^(4) fois la fréquence de coupure
+            if res_values is not None:
+                condo = self.components(order=order, cutoff_frequency=cutoff_frequency, res_values=res_values)
+                if order == 1:
+                    num = [1.0]
+                    den = [res_values[0] * condo["C"], 1.0]
+                    tf = TransferFunction(num, den)
+                    # *Pour avoir un graphe qui est toujours dans les bonnes plages
+                    w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+                    w, mag, phase = bode(tf, w=w)
+                    freq_hz = w/(2 * np.pi)
+                    fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-        if order % 2 == 0:
-            stage = order / 2
-            for x in range(int(stage)):
-                r1_idx = x * 2
-                r2_idx = r1_idx + 1
-                c1_idx = x * 2
-                c2_idx = r1_idx + 1
-                num = 1
-                num_stage.append(num)
-                den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
-                den_stage.append(den)
-            combined_num = np.polymul(num_stage, 1)
-            combined_den = np.polymul(den_stage, 1)
-            combined_tf = TransferFunction(combined_num, combined_den)
-        elif order % 2 != 0:
-            stage = (order // 2) + 1
-            # ordre paire
-            for x in range(int(stage)):
-                r1_idx = x * 2 - 1
-                r2_idx = r1_idx + 1
-                c1_idx = x * 2 - 1
-                c2_idx = r1_idx + 1
-                if x == 0:
-                    num_stage1 = 1
-                    num_stage.append(num_stage1)
-                    den_stage1 = 1 + r_vals[x] * c_vals[x]
-                    den_stage.append(den_stage1)
-                else:    
-                    num = 1
-                    num_stage.append(num)
-                    den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
-                    den_stage.append(den)
-            combined_num = np.polymul(num_stage, num_stage1)
-            combined_den = np.polymul(den_stage, den_stage1)
-            combined_tf = TransferFunction(combined_num, combined_den)
+                    # Tracer les données
+                    ax_mag_lp.semilogx(freq_hz, mag, 'b')
+                    ax_mag_lp.set_ylabel('Magnitude (dB)')
+                    ax_phase_lp.semilogx(freq_hz, phase, 'r')
+                    ax_phase_lp.set_xlabel('Frequency (Hz)')
+                    ax_phase_lp.set_ylabel('Phase (deg)')
 
-        # Génère une plage de fréquences logarithmiques entre 10^2 et 10^6 rad/s avec 500 points
-        w2 = np.logspace(2, 6, 500)
+                    # Activer les grilles pour les deux axes
+                    ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+                    ax_phase_lp.grid(True, which='both', axis='x')
+                    # Définir les ticks sur l'axe x pour que les grilles apparaissent entre chaque décennie
+                    ax_mag_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))  # ajuster les décades selon la plage de fréquence
+                    ax_phase_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))
 
-        # Calcule la réponse en fréquence (magnitude et phase) pour la fonction de transfert 'combined_tf'
-        # à l'aide des fréquences définies dans 'w2'
-        w2, mag2, phase2 = bode(combined_tf, w=w2)
-        # Convertit les fréquences angulaires (rad/s) en fréquences linéaires (Hz)
-        freq_hz2 = w2 / (2 * np.pi)
+                    # Ajuster la disposition pour éviter le chevauchement
+                    plt.tight_layout()
+                    # Afficher le graphique
+                    plt.show()
+            elif condo_values is not None:
+                res = self.components(order=order, cutoff_frequency=cutoff_frequency, condo_values=condo_values)
+                if order == 1:
+                    num = [1.0]
+                    den = [condo_values[0] * res["R"], 1.0]
+                    tf = TransferFunction(num, den)
+                    # *Pour avoir un graphe qui est toujours dans les bonnes plages
+                    w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+                    _, mag, phase = bode(tf, w=w)
+                    freq_hz = w/(2 * np.pi)
+                    fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-        # Crée une figure avec deux sous-graphes empilés pour la magnitude et la phase
-        fig_hp, (ax_mag_hp, ax_phase_hp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+                    # Tracer les données
+                    ax_mag_lp.semilogx(freq_hz, mag, 'b')
+                    ax_mag_lp.set_ylabel('Magnitude (dB)')
+                    ax_phase_lp.semilogx(freq_hz, phase, 'r')
+                    ax_phase_lp.set_xlabel('Frequency (Hz)')
+                    ax_phase_lp.set_ylabel('Phase (deg)')
 
-        # Trace la magnitude (en dB) en fonction de la fréquence (Hz) sur une échelle logarithmique
-        ax_mag_hp.semilogx(freq_hz2, mag2, 'b')  # Courbe en bleu
-        ax_mag_hp.set_ylabel('Magnitude (dB)')    # Libellé de l'axe Y pour la magnitude
+                    # Activer les grilles pour les deux axes
+                    ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+                    ax_phase_lp.grid(True, which='both', axis='x')
+                    # Définir les ticks sur l'axe x pour que les grilles apparaissent entre chaque décennie
+                    ax_mag_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))  # ajuster les décades selon la plage de fréquence
+                    ax_phase_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))
 
-        # Trace la phase (en degrés) en fonction de la fréquence (Hz) sur une échelle logarithmique
-        ax_phase_hp.semilogx(freq_hz2, phase2, 'r')  # Courbe en rouge
-        ax_phase_hp.set_xlabel('Frequency (Hz)')     # Libellé de l'axe X pour la fréquence
-        ax_phase_hp.set_ylabel('Phase (deg)')        # Libellé de l'axe Y pour la phase
-
-        # Ajoute une grille aux deux sous-graphes pour une meilleure lisibilité
-        ax_phase_hp.grid(True)
-        ax_mag_hp.grid(True)
-
-        # Ajuste automatiquement les espaces entre les sous-graphes pour éviter les chevauchements
-        plt.tight_layout()
-
-        # Affiche le graphique
-        plt.show()
-
+                    # Ajuster la disposition pour éviter le chevauchement
+                    plt.tight_layout()
+                    # Afficher le graphique
+                    plt.show()
+            else:
+                raise KeyError("Veuillez au moin insérer une liste de composants.")
+        elif res_values is not None and condo_values is not None:
+            None
+        else:
+            raise KeyError("Veuillez inserer les listes de composants manquantes, " + 
+                           "Ou ajouter une frequence de coupure.")
+        
 class Butterworth_HighPass:
     def __init__(self):    
         # Tableau des pulsations et facteurs de qualité des filtres passe-bas normalisés (Pour Butterworth rien ne change)
@@ -559,3 +562,20 @@ class Butterworth_HighPass:
 
         # Affiche le graphique
         plt.show()
+
+'''     w = np.logspace(2, 5, 400)
+        w, mag, phase = bode(combined_tf, w=w)
+        freq_hz = w/(2*np.pi)
+
+        fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2,1,figsize=(8,6), sharex=True)
+        ax_mag_lp.semilogx(freq_hz, mag, 'b')
+        ax_mag_lp.set_ylabel('Magnitude (dB)')
+
+        ax_phase_lp.semilogx(freq_hz, phase, 'r')
+        ax_phase_lp.set_xlabel('Frequency (Hz)')
+        ax_phase_lp.set_ylabel('Phase (deg)')
+        ax_phase_lp.grid(True)
+        ax_mag_lp.grid(True)
+
+        plt.tight_layout()
+        plt.show()'''
