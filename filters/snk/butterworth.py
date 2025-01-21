@@ -49,7 +49,7 @@ class Butterworth_LowPass:
                     # Calcul du composant
                     condo_value = 1/(pulsation_W0 * res_values[0])
                     # Retourne les valeurs calculées
-                    return {res_values[0], condo_value}
+                    return {"R": res_values[0], "C": condo_value}
                 else:
                     raise ValueError("Veuillez insérer des valeurs valables.")
             elif condo_values is not None:
@@ -60,7 +60,7 @@ class Butterworth_LowPass:
                     raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
                 if isinstance(condo_values[0], (int, float)):
                     res_value = 1/(pulsation_W0 * condo_values[0])
-                    return {res_value, condo_values[0]}
+                    return {"R": res_value, "C": condo_values[0]}
                 else:
                     raise ValueError("Veuillez insérer des int ou float.")
             else:
@@ -122,7 +122,7 @@ class Butterworth_LowPass:
                             c1 = 1 / ((current_res[0] + current_res[1]) * pulsation_W0 * self.BUTTERWORTH_TABLE[order][y])
                             c2 = ((current_res[0] + current_res[1]) * self.BUTTERWORTH_TABLE[order][y]) / (current_res[0] * current_res[1] * pulsation_W0)
                             condo_value.extend([c1, c2])
-                return condo_value
+                return {"R": res_values, "C": condo_value}
             
             # Verifie si une liste à été entrée
             if condo_values is not None:
@@ -201,7 +201,7 @@ class Butterworth_LowPass:
                             r2 = (j + np.sqrt(discriminant)) / 2
                             r1 = j - r2
                             res_value.extend([r1, r2])
-                return res_value
+                return {"R": res_value, "C": condo_values}
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
 
@@ -327,7 +327,7 @@ class Butterworth_HighPass:
                     # Calcul du composant
                     condo_value = 1/(pulsation_W0 * res_values[0])
                     # Retourne les valeurs calculées
-                    return {res_values[0], condo_value}
+                    return {"R": res_values[0], "C": condo_value}
                 else:
                     raise ValueError("Veuillez insérer des valeurs valables.")
             elif condo_values is not None:
@@ -338,7 +338,7 @@ class Butterworth_HighPass:
                     raise ValueError("Pour le 1er ordre veuillez mettre qu'un seul élément.")
                 if isinstance(condo_values[0], (int, float)):
                     res_value = 1/(pulsation_W0 * condo_values[0])
-                    return {res_value, condo_values[0]}
+                    return {"R": res_value, "C": condo_values[0]}
                 else:
                     raise ValueError("Veuillez insérer des int ou float.")
             else:
@@ -370,7 +370,7 @@ class Butterworth_HighPass:
 
                         # Vérification de la condition
                         if res_values[r2_idx] < 4 * res_values[r1_idx] * self.BUTTERWORTH_TABLE[order][y]**2:
-                            raise ValueError(f"Condition non respectée au stage {y + 1}: R2 ({c1}) >= 4 * R1 ({c2}) * Q0^2 ({q0**2}).")
+                            raise ValueError(f"Condition non respectée au stage {y + 1}: R2 ({r2}) >= 4 * R1 ({r1}) * Q0^2 ({q0**2}).")
 
                         # Calcul des résistances
                         j = 1 / (pulsation_W0 * res_values[r1_idx] * q0)
@@ -381,8 +381,9 @@ class Butterworth_HighPass:
                             raise ValueError("Discriminant négatif : impossible de calculer les résistances.")
 
                         c2 = (j + np.sqrt(discriminant)) / 2
-                        c1 = j - r2
+                        c1 = j - c2
                         condo_value.extend([c1, c2])
+                    return {"R": res_values, "C": condo_value}
 
                 # Verifie si l'ordre est impair
                 elif order % 2 != 0:
@@ -411,7 +412,7 @@ class Butterworth_HighPass:
                         if y > 0:
                             # Vérification de la condition
                             if res_values[r2_idx] < 4 * res_values[r1_idx] * self.BUTTERWORTH_TABLE[order][y]**2:
-                                raise ValueError(f"Condition non respectée au stage {y + 1}: R2 ({c1}) >= 4 * R1 ({c2}) * Q0^2 ({q0**2}).")
+                                raise ValueError(f"Condition non respectée au stage {y + 1}: R2 ({r2}) >= 4 * R1 ({r1}) * Q0^2 ({q0**2}).")
                             j = 1 / (pulsation_W0 * res_values[r1_idx] * q0)
                             k = 1 / (pulsation_W0**2 * res_values[r1_idx] * res_values[r2_idx])
                             discriminant = j**2 - 4 * k
@@ -422,10 +423,9 @@ class Butterworth_HighPass:
                             c2 = (j + np.sqrt(discriminant)) / 2
                             c1 = j - c2
                             condo_value.extend([c1, c2])
-                return condo_value
-            
+                    return {"R": res_values, "C": condo_value}
             # Verifie si une liste à été entrée
-            if condo_values is not None:
+            elif condo_values is not None:
                 nbr_elements = len(condo_values)
                 # Verifie si l'ordre est pair
                 # Calcul le nombre d'étages du filtre
@@ -481,7 +481,7 @@ class Butterworth_HighPass:
                             r2 = ((c1 + c2) * self.BUTTERWORTH_TABLE[order][y]) / (c1 * c2 * pulsation_W0)
                             r1 = 1/((c1 + c2) * pulsation_W0 * self.BUTTERWORTH_TABLE[order][y])
                             res_value.extend([r1, r2])
-                    return res_value
+                    return {"R": res_value, "C": condo_values}
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
             
