@@ -11,18 +11,15 @@ class TestBesselFilters(unittest.TestCase):
 
     def test_first_order_lowpass(self):
         order = 1
-        r_vals = [159.15]  # Valeur donnée pour la résistance (valeur attendue)
-        c_vals = None  # Aucun condensateur spécifié
+        r_vals = [150]  # Valeur donnée pour la résistance
+        c_val = 1.061032953945969e-06  # (valeur attendue)
 
         # Appel de la méthode avec l'instance
-        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals, c_vals=c_vals)
-
-        # Imprimer la structure de stages pour comprendre sa composition
-        print("Structure de stages :", stages)
+        _, stages = self.lowpass_instance.components(order=order, cutoff_freq=self.cutoff_freq, r_vals=r_vals)
 
         self.assertAlmostEqual(
-            stages[0]["params"]["R"], r_vals[0], delta=self.tolerance,
-            msg=f"Erreur pour R : {stages[0]['params']['R']} != {r_vals[0]}"
+            stages[0]["params"]["C"], c_val, delta=self.tolerance,
+            msg=f"Erreur pour C : {stages[0]['params']['C']} != {c_val}"
         )
     def test_second_order_lowpass(self):
         order = 2
