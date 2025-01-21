@@ -28,9 +28,9 @@ class BandStopFilter:
         return {"R": resistance, "L": L, "C": C}
 
     @staticmethod
-    def bode_plot_bandstop(resonant_frequency, resistance, inductance, capacitance):
+    def bode_plot(resonant_frequency, resistance, inductance, capacitance):
         """
-        Plot the Bode diagram for a band-stop filter (RLC Parallel or Series).
+        Plot the Bode diagram for a band-stop filter.
 
         Parameters:
         resonant_frequency (float): Resonant frequency in Hz
