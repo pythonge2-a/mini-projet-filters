@@ -187,7 +187,7 @@ class Butterworth_LowPass:
                             # Calcul du premier étage
                             r1 = 1/(pulsation_W0 * condo_values[0])
                             res_value.append(r1)
-                        if y > 0:
+                        elif y > 0:
                             # Vérification de la condition
                             if condo_values[c1_idx] < 4 * condo_values[c2_idx] * self.BUTTERWORTH_TABLE[order][y]**2:
                                 raise ValueError(f"Condition non respectée au stage {y + 1}: C1 ({c1}) >= 4 * C2 ({c2}) * Q0^2 ({q0**2}).")
@@ -205,83 +205,193 @@ class Butterworth_LowPass:
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
 
-    def graphs(self, order, cutoff_frequency=None,res_values=None, condo_values=None):
-        # Calcul des Fct de transfert des differents etages
+    def graphs(self, order, cutoff_frequency=None, res_values=None, condo_values=None):
         if order > 10 or order < 1:
             raise ValueError(f"L'ordre {order} n'est pas supporté.")   
-        num_combined = []
-        den_combined = []
         if cutoff_frequency is not None:    # Si une frequence de coupure est donnée
-            # *Pour avoir un graphe qui est toujours dans les bonnes plages
-            freq_min_hz = cutoff_frequency / 10_000  # 10^(-4) fois la fréquence de coupure
-            freq_max_hz = cutoff_frequency * 10_000  # 10^(4) fois la fréquence de coupure
-            if res_values is not None:
-                condo = self.components(order=order, cutoff_frequency=cutoff_frequency, res_values=res_values)
+            if res_values is not None or condo_values is not None:
+                if condo_values == None:
+                    condo = self.components(order=order, cutoff_frequency=cutoff_frequency, res_values=res_values)
+                else:
+                    res = self.components(order=order, cutoff_frequency=cutoff_frequency, condo_values=condo_values)
+
                 if order == 1:
+                    # Pour avoir 2 decades apres et 2 decades avant
+                    freq_min_hz = cutoff_frequency / 100  # 10^(-2) fois la fréquence de coupure
+                    freq_max_hz = cutoff_frequency * 100  # 10^(2) fois la fréquence de coupure
                     num = [1.0]
-                    den = [res_values[0] * condo["C"], 1.0]
+                    if condo_values is None:
+                        den = [res_values[0] * condo["C"], 1.0]
+                    else:
+                        den = [condo_values[0] * res["R"], 1.0]
                     tf = TransferFunction(num, den)
-                    # *Pour avoir un graphe qui est toujours dans les bonnes plages
+                    # Pour avoir un graphe qui est toujours dans les bonnes plages
                     w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
                     w, mag, phase = bode(tf, w=w)
-                    freq_hz = w/(2 * np.pi)
-                    fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-                    # Tracer les données
-                    ax_mag_lp.semilogx(freq_hz, mag, 'b')
-                    ax_mag_lp.set_ylabel('Magnitude (dB)')
-                    ax_phase_lp.semilogx(freq_hz, phase, 'r')
-                    ax_phase_lp.set_xlabel('Frequency (Hz)')
-                    ax_phase_lp.set_ylabel('Phase (deg)')
-
-                    # Activer les grilles pour les deux axes
-                    ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
-                    ax_phase_lp.grid(True, which='both', axis='x')
-                    # Définir les ticks sur l'axe x pour que les grilles apparaissent entre chaque décennie
-                    ax_mag_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))  # ajuster les décades selon la plage de fréquence
-                    ax_phase_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))
-
-                    # Ajuster la disposition pour éviter le chevauchement
-                    plt.tight_layout()
-                    # Afficher le graphique
-                    plt.show()
-            elif condo_values is not None:
-                res = self.components(order=order, cutoff_frequency=cutoff_frequency, condo_values=condo_values)
-                if order == 1:
-                    num = [1.0]
-                    den = [condo_values[0] * res["R"], 1.0]
-                    tf = TransferFunction(num, den)
-                    # *Pour avoir un graphe qui est toujours dans les bonnes plages
+                elif order >= 2:
+                    den_combined = [1]
+                    if order % 2 == 0:
+                        stage = order / 2
+                        freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        if condo_values is None:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2
+                                idx_2 = idx_1 + 1
+                                den = [condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                       (res_values[idx_1] + res_values[idx_2]),
+                                       1.0]
+                                den_combined = np.polymul(den_combined, den)
+                        else:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2
+                                idx_2 = idx_1 + 1
+                                # Calcul du polynome pour etage "X"
+                                den = [condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2], 
+                                       (res["R"][idx_1] + res["R"][idx_2]),
+                                       1.0]
+                                den_combined = np.polymul(den_combined, den)
+                    else:
+                        stage = order // 2 + 1
+                        freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        if condo_values is None:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2 - 1
+                                idx_2 = idx_1 + 1
+                                if x == 0:
+                                    den = [condo["C"][0] * res_values[0], 1]
+                                # Calcul du polynome pour etage "X"
+                                else:
+                                    den = [
+                                        condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                        (res_values[idx_1] + res_values[idx_2]),
+                                        1]
+                                den_combined = np.polymul(den_combined, den)
+                        else:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2 - 1 
+                                idx_2 = idx_1 + 1
+                                if x == 0:
+                                    den = [res["R"][0] * condo_values[0], 1]    
+                                # Calcul du polynome pour etage "X"
+                                else:
+                                    den = [
+                                        condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2], 
+                                        (res["R"][idx_1] + res["R"][idx_2]),
+                                        1]
+                                den_combined = np.polymul(den_combined, den)
+                    num_combined = [1]
+                    tf = TransferFunction(num_combined, den_combined)
+                    # Pour avoir un graphe qui est toujours dans les bonnes plages
                     w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
-                    _, mag, phase = bode(tf, w=w)
-                    freq_hz = w/(2 * np.pi)
-                    fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+                    w, mag, phase = bode(tf, w=w)
 
-                    # Tracer les données
-                    ax_mag_lp.semilogx(freq_hz, mag, 'b')
-                    ax_mag_lp.set_ylabel('Magnitude (dB)')
-                    ax_phase_lp.semilogx(freq_hz, phase, 'r')
-                    ax_phase_lp.set_xlabel('Frequency (Hz)')
-                    ax_phase_lp.set_ylabel('Phase (deg)')
+                freq_hz = w/(2 * np.pi)
+                fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-                    # Activer les grilles pour les deux axes
-                    ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
-                    ax_phase_lp.grid(True, which='both', axis='x')
-                    # Définir les ticks sur l'axe x pour que les grilles apparaissent entre chaque décennie
-                    ax_mag_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))  # ajuster les décades selon la plage de fréquence
-                    ax_phase_lp.set_xticks(np.logspace(np.log10(min(freq_hz)), np.log10(max(freq_hz)), num=9))
+                # Tracer les données
+                ax_mag_lp.semilogx(freq_hz, mag, 'b')
+                ax_mag_lp.set_ylabel('Magnitude (dB)')
+                ax_phase_lp.semilogx(freq_hz, phase, 'r')
+                ax_phase_lp.set_xlabel('Frequency (Hz)')
+                ax_phase_lp.set_ylabel('Phase (deg)')
 
-                    # Ajuster la disposition pour éviter le chevauchement
-                    plt.tight_layout()
-                    # Afficher le graphique
-                    plt.show()
+                # Activer les grilles pour les deux axes
+                ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+                ax_phase_lp.grid(True, which='both', axis='x')
+                ax_mag_lp.grid(True, which='both', axis='y')  # Ajout des lignes de grille entre les décennies
+                ax_phase_lp.grid(True, which='both', axis='y')
+
+                # Ajuster la disposition pour éviter le chevauchement
+                plt.tight_layout()
+                # Afficher le graphique
+                plt.show()
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
+            
         elif res_values is not None and condo_values is not None:
-            None
+            den_combined = [1]
+            if order % 2 == 0:
+                stage = order / 2
+                freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                if condo_values is None:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2
+                        idx_2 = idx_1 + 1
+                        den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        den_combined = np.polymul(den_combined, den)
+                else:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2
+                        idx_2 = idx_1 + 1
+                        # Calcul du polynome pour etage "X"
+                        den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        den_combined = np.polymul(den_combined, den)
+            else:
+                stage = order // 2 + 1
+                freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                if condo_values is None:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2 - 1
+                        idx_2 = idx_1 + 1
+                        if x == 0:
+                            den = [condo["C"][0] * res_values[0], 1]
+                        # Calcul du polynome pour etage "X"
+                        else:
+                            den = [
+                                condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        den_combined = np.polymul(den_combined, den)
+                else:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2 - 1 
+                        idx_2 = idx_1 + 1
+                        if x == 0:
+                            den = [res["R"][0] * condo_values[0], 1]    
+                        # Calcul du polynome pour etage "X"
+                        else:
+                            den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        den_combined = np.polymul(den_combined, den)
+            num_combined = [1]
+            tf = TransferFunction(num_combined, den_combined)
+            # Pour avoir un graphe qui est toujours dans les bonnes plages
+            w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+            w, mag, phase = bode(tf, w=w)
+
+            freq_hz = w/(2 * np.pi)
+            fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+
+            # Tracer les données
+            ax_mag_lp.semilogx(freq_hz, mag, 'b')
+            ax_mag_lp.set_ylabel('Magnitude (dB)')
+            ax_phase_lp.semilogx(freq_hz, phase, 'r')
+            ax_phase_lp.set_xlabel('Frequency (Hz)')
+            ax_phase_lp.set_ylabel('Phase (deg)')
+
+            # Activer les grilles pour les deux axes
+            ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+            ax_phase_lp.grid(True, which='both', axis='x')
+            ax_mag_lp.grid(True, which='both', axis='y')  # Ajout des lignes de grille entre les décennies
+            ax_phase_lp.grid(True, which='both', axis='y')
+
+            # Ajuster la disposition pour éviter le chevauchement
+            plt.tight_layout()
+            # Afficher le graphique
+            plt.show()
         else:
-            raise KeyError("Veuillez inserer les listes de composants manquantes, " + 
-                           "Ou ajouter une frequence de coupure.")
+            raise KeyError("Veuillez inserer les listes de composants, " + 
+                           "Ou ajouter une frequence de coupure + une liste de composants.")
         
 class Butterworth_HighPass:
     def __init__(self):    
@@ -487,95 +597,212 @@ class Butterworth_HighPass:
                     return {"R": res_value, "C": condo_values}
             else:
                 raise KeyError("Veuillez au moin insérer une liste de composants.")
-            
-    def graphs(self, order, cutoff_freq, r_vals, c_vals):
-        # Calcul des Fct de transfert des differents etages
+
+    def graphs(self, order, cutoff_frequency=None, res_values=None, condo_values=None):
         if order > 10 or order < 1:
-            raise ValueError("Ordre de filtre non Supporté, MAX : 10.")
-        pulsation_w0 = 2 * np.pi * cutoff_freq
-        num_stage = []
-        den_stage = []
+            raise ValueError(f"L'ordre {order} n'est pas supporté.")   
+        if cutoff_frequency is not None:    # Si une frequence de coupure est donnée
+            if res_values is not None or condo_values is not None:
+                if condo_values == None:
+                    condo = self.components(order=order, cutoff_frequency=cutoff_frequency, res_values=res_values)
+                else:
+                    res = self.components(order=order, cutoff_frequency=cutoff_frequency, condo_values=condo_values)
 
-        if order % 2 == 0:
-            stage = order / 2
-            for x in range(int(stage)):
-                r1_idx = x * 2
-                r2_idx = r1_idx + 1
-                c1_idx = x * 2
-                c2_idx = r1_idx + 1
-                num = r_vals[r1_idx] * r_vals[r2_idx] * c_vals[c1_idx] * c_vals[c2_idx]
-                num_stage.append(num)
-                den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
-                den_stage.append(den)
-            combined_num = np.polymul(num_stage)
-            combined_den = np.polymul(den_stage)
-            combined_tf = TransferFunction(combined_num, combined_den)
-        elif order % 2 != 0:
-            stage = (order // 2) + 1
-            # ordre paire
-            for x in range(int(stage)):
-                r1_idx = x * 2 - 1
-                r2_idx = r1_idx + 1
-                c1_idx = x * 2 - 1
-                c2_idx = r1_idx + 1
-                if x == 0:
-                    num_stage1 = r_vals[x] * c_vals[x]
-                    num_stage.append(num_stage1, 1)
-                    den_stage1 = 1 + r_vals[x] * c_vals[x]
-                    den_stage.append(den_stage1, 1)
-                else:    
-                    num = r_vals[r1_idx] * r_vals[r2_idx] * c_vals[c1_idx] * c_vals[c2_idx]
-                    num_stage.append(num)
-                    den = 1 + c_vals[c2_idx] * (r_vals[c1_idx] + r_vals[r2_idx]) + c_vals[c1_idx] * c_vals[c2_idx] * r_vals[r1_idx] * r_vals[r2_idx]
-                    den_stage.append(den)
-            combined_num = np.polymul(num_stage, num_stage1)
-            combined_den = np.polymul(den_stage, den_stage1)
-            combined_tf = TransferFunction(combined_num, combined_den)
+                if order == 1:
+                    # Pour avoir 2 decades apres et 2 decades avant
+                    freq_min_hz = cutoff_frequency / 100  # 10^(-2) fois la fréquence de coupure
+                    freq_max_hz = cutoff_frequency * 100  # 10^(2) fois la fréquence de coupure
+                    if condo_values is None:
+                        num = [res_values[0] * condo["C"]]
+                        den = [res_values[0] * condo["C"], 1.0]
+                    else:
+                        num = [condo_values[0] * res["R"]]
+                        den = [condo_values[0] * res["R"], 1.0]
+                    tf = TransferFunction(num, den)
+                    # Pour avoir un graphe qui est toujours dans les bonnes plages
+                    w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+                    w, mag, phase = bode(tf, w=w)
 
-        # Génère une plage de fréquences logarithmiques entre 10^2 et 10^6 rad/s avec 500 points
-        w2 = np.logspace(2, 6, 500)
+                elif order >= 2:
+                    den_combined = [1]
+                    num_combined = [1]
+                    if order % 2 == 0:
+                        stage = order / 2
+                        freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        if condo_values is None:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2
+                                idx_2 = idx_1 + 1
+                                den = [condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                       (res_values[idx_1] + res_values[idx_2]),
+                                       1.0]
+                                num = [condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2]]
+                                den_combined = np.polymul(den_combined, den)
+                                num_combined = np.polymul(num_combined, num)
+                        else:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2
+                                idx_2 = idx_1 + 1
+                                # Calcul du polynome pour etage "X"
+                                den = [condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2], 
+                                       (res["R"][idx_1] + res["R"][idx_2]),
+                                       1.0]
+                                num = [condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2]]
+                                den_combined = np.polymul(den_combined, den)
+                                num_combined = np.polymul(num_combined, num)
+                    else:
+                        stage = order // 2 + 1
+                        freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                        if condo_values is None:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2 - 1
+                                idx_2 = idx_1 + 1
+                                if x == 0:
+                                    den = [condo["C"][0] * res_values[0], 1]
+                                    num = [condo["C"][0] * res_values[0]]
+                                # Calcul du polynome pour etage "X"
+                                else:
+                                    den = [
+                                        condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                        (res_values[idx_1] + res_values[idx_2]),
+                                        1]
+                                    num = [condo["C"][idx_1]*condo["C"][idx_2]*res_values[idx_1]*res_values[idx_2]]
+                                den_combined = np.polymul(den_combined, den)
+                                num_combined = np.polymul(num_combined, num)
+                        else:
+                            for x in range(int(stage)):
+                                idx_1 = x * 2 - 1 
+                                idx_2 = idx_1 + 1
+                                if x == 0:
+                                    den = [res["R"][0] * condo_values[0], 1]    
+                                    num = [res["R"][0] * condo_values[0]]
+                                # Calcul du polynome pour etage "X"
+                                else:
+                                    den = [
+                                        condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2], 
+                                        (res["R"][idx_1] + res["R"][idx_2]),
+                                        1]
+                                    num = [condo_values[idx_1]*condo_values[idx_2]*res["R"][idx_1]*res["R"][idx_2]]
+                                den_combined = np.polymul(den_combined, den)
+                                num_combined = np.polymul(num_combined, num)
+                    tf = TransferFunction(num_combined, den_combined)
+                    # Pour avoir un graphe qui est toujours dans les bonnes plages
+                    w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+                    w, mag, phase = bode(tf, w=w)
 
-        # Calcule la réponse en fréquence (magnitude et phase) pour la fonction de transfert 'combined_tf'
-        # à l'aide des fréquences définies dans 'w2'
-        w2, mag2, phase2 = bode(combined_tf, w=w2)
-        # Convertit les fréquences angulaires (rad/s) en fréquences linéaires (Hz)
-        freq_hz2 = w2 / (2 * np.pi)
+                freq_hz = w/(2 * np.pi)
+                fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-        # Crée une figure avec deux sous-graphes empilés pour la magnitude et la phase
-        fig_hp, (ax_mag_hp, ax_phase_hp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+                # Tracer les données
+                ax_mag_lp.semilogx(freq_hz, mag, 'b')
+                ax_mag_lp.set_ylabel('Magnitude (dB)')
+                ax_phase_lp.semilogx(freq_hz, phase, 'r')
+                ax_phase_lp.set_xlabel('Frequency (Hz)')
+                ax_phase_lp.set_ylabel('Phase (deg)')
 
-        # Trace la magnitude (en dB) en fonction de la fréquence (Hz) sur une échelle logarithmique
-        ax_mag_hp.semilogx(freq_hz2, mag2, 'b')  # Courbe en bleu
-        ax_mag_hp.set_ylabel('Magnitude (dB)')    # Libellé de l'axe Y pour la magnitude
+                # Activer les grilles pour les deux axes
+                ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+                ax_phase_lp.grid(True, which='both', axis='x')
+                ax_mag_lp.grid(True, which='both', axis='y')  # Ajout des lignes de grille entre les décennies
+                ax_phase_lp.grid(True, which='both', axis='y')
 
-        # Trace la phase (en degrés) en fonction de la fréquence (Hz) sur une échelle logarithmique
-        ax_phase_hp.semilogx(freq_hz2, phase2, 'r')  # Courbe en rouge
-        ax_phase_hp.set_xlabel('Frequency (Hz)')     # Libellé de l'axe X pour la fréquence
-        ax_phase_hp.set_ylabel('Phase (deg)')        # Libellé de l'axe Y pour la phase
+                # Ajuster la disposition pour éviter le chevauchement
+                plt.tight_layout()
+                # Afficher le graphique
+                plt.show()
+            else:
+                raise KeyError("Veuillez au moin insérer une liste de composants.")
+            
+        elif res_values is not None and condo_values is not None:
+            den_combined = [1]
+            num_combined = [1]
+            if order % 2 == 0:
+                stage = order / 2
+                freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                if condo_values is None:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2
+                        idx_2 = idx_1 + 1
+                        den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        num = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2]]
+                        den_combined = np.polymul(den_combined, den)
+                        num_combined = np.polymul(num_combined, num)
+                else:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2
+                        idx_2 = idx_1 + 1
+                        # Calcul du polynome pour etage "X"
+                        den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                        num = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2]]
+                        den_combined = np.polymul(den_combined, den)
+                        num_combined = np.polymul(num_combined, num)
+            else:
+                stage = order // 2 + 1
+                freq_min_hz = cutoff_frequency / 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                freq_max_hz = cutoff_frequency * 10**(stage + 1)  # 10^(stage + 1) fois la fréquence de coupure
+                if condo_values is None:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2 - 1
+                        idx_2 = idx_1 + 1
+                        if x == 0:
+                            den = [condo["C"][0] * res_values[0], 1]
+                            num = [condo["C"][0] * res_values[0]]
+                        # Calcul du polynome pour etage "X"
+                        else:
+                            den = [
+                                condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                            num = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2]]
+                        den_combined = np.polymul(den_combined, den)
+                        num_combined = np.polymul(num_combined, num)
+                else:
+                    for x in range(int(stage)):
+                        idx_1 = x * 2 - 1 
+                        idx_2 = idx_1 + 1
+                        if x == 0:
+                            den = [res["R"][0] * condo_values[0], 1] 
+                            num = [res["R"][0] * condo_values[0]]   
+                        # Calcul du polynome pour etage "X"
+                        else:
+                            den = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2], 
+                                (res_values[idx_1] + res_values[idx_2]),
+                                1.0]
+                            num = [condo_values[idx_1]*condo_values[idx_2]*res_values[idx_1]*res_values[idx_2]]
+                        den_combined = np.polymul(den_combined, den)
+                        num_combined = np.polymul(num_combined, num)
+            tf = TransferFunction(num_combined, den_combined)
+            # Pour avoir un graphe qui est toujours dans les bonnes plages
+            w = np.logspace(np.log10(2 * np.pi * freq_min_hz), np.log10(2 * np.pi * freq_max_hz), 500)
+            w, mag, phase = bode(tf, w=w)
 
-        # Ajoute une grille aux deux sous-graphes pour une meilleure lisibilité
-        ax_phase_hp.grid(True)
-        ax_mag_hp.grid(True)
+            freq_hz = w/(2 * np.pi)
+            fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-        # Ajuste automatiquement les espaces entre les sous-graphes pour éviter les chevauchements
-        plt.tight_layout()
+            # Tracer les données
+            ax_mag_lp.semilogx(freq_hz, mag, 'b')
+            ax_mag_lp.set_ylabel('Magnitude (dB)')
+            ax_phase_lp.semilogx(freq_hz, phase, 'r')
+            ax_phase_lp.set_xlabel('Frequency (Hz)')
+            ax_phase_lp.set_ylabel('Phase (deg)')
 
-        # Affiche le graphique
-        plt.show()
+            # Activer les grilles pour les deux axes
+            ax_mag_lp.grid(True, which='both', axis='x')  # Ajout des lignes de grille entre les décennies
+            ax_phase_lp.grid(True, which='both', axis='x')
+            ax_mag_lp.grid(True, which='both', axis='y')  # Ajout des lignes de grille entre les décennies
+            ax_phase_lp.grid(True, which='both', axis='y')
 
-'''     w = np.logspace(2, 5, 400)
-        w, mag, phase = bode(combined_tf, w=w)
-        freq_hz = w/(2*np.pi)
-
-        fig_lp, (ax_mag_lp, ax_phase_lp) = plt.subplots(2,1,figsize=(8,6), sharex=True)
-        ax_mag_lp.semilogx(freq_hz, mag, 'b')
-        ax_mag_lp.set_ylabel('Magnitude (dB)')
-
-        ax_phase_lp.semilogx(freq_hz, phase, 'r')
-        ax_phase_lp.set_xlabel('Frequency (Hz)')
-        ax_phase_lp.set_ylabel('Phase (deg)')
-        ax_phase_lp.grid(True)
-        ax_mag_lp.grid(True)
-
-        plt.tight_layout()
-        plt.show()'''
+            # Ajuster la disposition pour éviter le chevauchement
+            plt.tight_layout()
+            # Afficher le graphique
+            plt.show()
+        else:
+            raise KeyError("Veuillez inserer les listes de composants, " + 
+                           "Ou ajouter une frequence de coupure + une liste de composants.")
