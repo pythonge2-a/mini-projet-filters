@@ -53,7 +53,8 @@ Il sera possible d'afficher deux graphiques qui le diagramme de Bode en amplitud
 
 La librairie a pour ambition de perdurer au délà du projet de classe, afin d'être open source et améliorable, en ajoutant d'autres fonctionnalités d'aide à la conception
 
-## Exemple d'utilisation
+## Exemples d'utilisation
+### Filtre actif
 
 ```python
 from filters.snk.bessel import lowpass, highpass
@@ -70,7 +71,7 @@ for i, stage in enumerate(stages):
     print("Paramètres :", stage['params'])
 ```
 
-### Détail du code
+#### Détail du code
 
 Import de la classe qui nous intéresse :
 ```python
@@ -93,6 +94,55 @@ Voici un exemple de graphique obtenu à l'issue de l'exécution du code :
   <img width="601" alt="image" src="https://github.com/user-attachments/assets/f150da63-2435-482a-9850-15398067f003" />
 </p>
 
+### Filtre passif
+
+##### Filtre RC
+
+```python
+from filters.passives.low_pass import LowPassFilter
+
+def main():
+    lowpass_filters = LowPassFilter()
+    result = lowpass_filters.lowpass_rc(cutoff_frequency=1000,resistance=1000)
+    print(result)
+
+
+if name == "main":
+    main()
+```
+
+##### Détail du code
+
+On importe la fonction qui nous intéresse
+```python
+from filters.passives.low_pass import LowPassFilter
+```
+On mentionne une valeur de résistance, donc "result" prendra la valeur du condensateur calculé, afin d'avoir une fréquence de coupure de 1000 Hz
+```python
+    result = lowpass_filters.lowpass_rc(cutoff_frequency=1000,resistance=1000)
+```
+#### Filtre RLC
+
+```python
+from filters.passives.low_pass import LowPassFilter
+
+def main():
+    lowpass_filters = LowPassFilter()
+    lowpass_filters.bode_plot(cutoff_frequency=1000,resistance=1000,inductance=1e-3,capacitance=1e-9)
+
+if name == "main":
+    main()
+```
+##### Détail du code
+
+On importe la fonction qui nous intéresse de la même manière que le code précédent
+```python
+from filters.passives.low_pass import LowPassFilter
+```
+On donne toutes les valeurs de tous les composants et "lowpass_filters.bode_plot" nous permet d'afficher le graphique obtenu
+```python
+lowpass_filters.bode_plot(cutoff_frequency=1000,resistance=1000,inductance=1e-3,capacitance=1e-9)
+```
 
 ## Commandes importantes
 
@@ -154,12 +204,12 @@ En résolvant :
   <img src="https://latex.codecogs.com/svg.latex?\color{white}R_2^2%20-%20\left(\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}\right)%20\cdot%20R_2%20+%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2}%20=%200" alt="Quadratic R2">
 </p>
 
-## Passe Haut
+### Passe Haut
 La fonction de transfert est donnée par :  
 <p align="center">
   <img src="https://latex.codecogs.com/svg.latex?\color{white}H(j\omega)%20=%20\frac{C_1%20C_2%20R_1%20R_2(j\omega)^2}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2}" alt="H(jω)">
 </p>
 
 
-## Références
+### Références
 Support de cours _Electronique analogique 2_ du département TIN, rédigé par Monsieur Blaise Grandjean
