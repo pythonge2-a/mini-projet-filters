@@ -111,8 +111,10 @@ poetry build
 ## Calculs utilisés
 
 <p align="center">
-  ![image](https://github.com/user-attachments/assets/d1d7d270-32a8-4389-84a8-2cbc7d3fd297)
+  <img width="601" alt="image" src="https://github.com/user-attachments/assets/e98e8ecd-fdd6-49ce-b68f-45e33dc9e83e" />
 </p>
+
+
 
 
 
