@@ -1,6 +1,5 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/oOQR1xPR)
-# Mini-projet PythonGE2 
-## Librairie _Python filters_
+# Librairie _Python filters_
 
 ## Membres du groupe :
 - Maxime Magnenat
@@ -47,6 +46,7 @@ Il sera possible d'afficher deux graphiques qui le diagramme de Bode en amplitud
 - Nous utilisons poetry afin de faciliter la gestion des dépendances
 - Pytest est utilisé afin de s'assurer en tout temps du bon fonctionnement de la librairie et de la justesse des calculs, certains tests sont basés sur le support de cours _Electronique analogique_
 - La qualité du code est contrôlée avec Black and Ruff, pour suivre PEP8
+- Le fichier "requierements.txt" liste les librairies externes utilisées par _Python filters_
 
 
 ## Déploiement
@@ -55,7 +55,7 @@ La librairie a pour ambition de perdurer au délà du projet de classe, afin d'�
 
 ## Exemple d'utilisation
 
-```python <
+```python
 from filters.snk.bessel import lowpass, highpass
 
 highpass_test = highpass()
@@ -68,9 +68,48 @@ for i, stage in enumerate(stages):
     print(f"Stage {i+1}:")
     print("Fonction de transfert :", stage['tf'])
     print("Paramètres :", stage['params'])
-> ```
+```
 
-## Installation
+### Détail du code
 
-### Références
+Import de la classe qui nous intéresse :
+```python
+from filters.snk.bessel import lowpass, highpass
+```
+On indique les valeurs de résistances :
+```python
+r_vals = [1000,10000,1000,10000]
+```
+Le filtre voulu est un ordre 1 avec une fréquence de coupure de 1000 Hz
+```python
+highpass_test.graphs(order =1, cutoff_freq=1000,r_vals=r_vals)
+```
+Dans le code ci-dessous, on indique des valeurs de résistances
+
+## Graphique
+Voici un exemple de graphique obtenu à l'issue de l'exécution du code :
+<img width="601" alt="image" src="https://github.com/user-attachments/assets/f150da63-2435-482a-9850-15398067f003" />
+
+
+## Commandes importantes
+
+### Exécution des tests
+
+```python
+pytest -v -s
+```
+
+### Préparation de la distribution
+
+```python
+poetry build
+```
+
+### Installation
+
+```python
+pip install filters-0.1.0-py3-none-any.whl
+```
+
+## Références
 Support de cours _Electronique analogique_ du département TIN, rédigé par Monsieur Blaise Grandjean
