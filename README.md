@@ -9,7 +9,7 @@
 - David Vuillemier
 
 ## Description du projet 
-_Python filters_ est un projet de 5 étudiants de l'école d'ingénieur d'Yverdon-les-Bainse (HEIG-VD).
+_Python filters_ est un projet de 5 étudiants de l'école d'ingénieur d'Yverdon-les-Bains (HEIG-VD).
 
 Le projet est une librairie open-source d'aide à la conception de filtres électroniques par le calcul de valeurs de composants, nous abordons en détail les fonctionnalités plus bas.
 Les filtres pris en charge par la librairie sont les suivants:
@@ -20,7 +20,7 @@ Les filtres pris en charge par la librairie sont les suivants:
 - Passifs (ordre 1 et 2)
 
 Pour chacun des types de filtres sus-mentionnés, la librairie prend en charge les passe haut et passe bas.
-Les filtres actifs sont modélisés par des couplages de cellules de Sallen & Key [lien Wikipedia sur les cellules de Sallen & Key](https://en.wikipedia.org/wiki/Sallen%E2%80%93Key_topology)
+Les filtres actifs sont modélisés par des couplages de cellules de [Sallen & Key](https://en.wikipedia.org/wiki/Sallen%E2%80%93Key_topology)
 Ces derniers sont dimmensionnés à l'aide du tableau de valeurs normalisées (wk/wr et facteur de qualité)
 
 ### Fonctionnalités
@@ -32,8 +32,8 @@ La conception de filtres requièrent de longs calculs chronophages et qui s'oubl
 - Composants connus (résistances ou condensateurs)
 
 et en retour le code va calculer les valeurs de composants qui lui permettent d'avoir le filtre désiré.
-Condensateurs en entrée  --->  valeurs des résistances en sortie
-Résistances en entrée    --->  valeurs des condensateurs en sortie
+\Condensateurs en entrée  --->  valeurs des résistances en sortie
+\Résistances en entrée    --->  valeurs des condensateurs en sortie
 
 ### Structure
 Notre bibliothèque se découpera sous la forme de fonctions.
@@ -88,7 +88,10 @@ Dans le code ci-dessous, on indique des valeurs de résistances
 
 ## Graphique
 Voici un exemple de graphique obtenu à l'issue de l'exécution du code :
-<img width="601" alt="image" src="https://github.com/user-attachments/assets/f150da63-2435-482a-9850-15398067f003" />
+
+<p align="center">
+  <img width="601" alt="image" src="https://github.com/user-attachments/assets/f150da63-2435-482a-9850-15398067f003" />
+</p>
 
 
 ## Commandes importantes
