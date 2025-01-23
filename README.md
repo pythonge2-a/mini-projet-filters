@@ -110,39 +110,52 @@ poetry build
 
 ## Calculs utilisés
 
-# Butterworth
+Voici un exemple de comment on isole les paramètres qui nous intéresse, afin de les calculer.
+Les formules étant semblables pour les 3 types de filtres actifs (Tchebychev, Bessel, Butterworth), les valeurs littérales restent les mêmes.
 
 ## Passe Bas
 La fonction de transfert est donnée par :  
-![H(jw)](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20H(j%5Comega)%20=%20%5Cfrac%7B1%7D%7B1%20+%20j%5Comega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D)
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}H(j\omega)%20=%20\frac{1}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2}" alt="H(jω)">
+</p>
 
 Quand les condensateurs sont inconnus :  
-![C_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_2%20=%20%5Cfrac%7B1%7D%7B(R_1%20+%20R_2)%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D)  
-![C_1](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_1%20=%20%5Cfrac%7B(R_1%20+%20R_2)%20%5Ccdot%20Q_0%7D%7BR_1%20%5Ccdot%20R_2%20%5Ccdot%20%5Comega_0%7D)
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}C_2%20=%20\frac{1}{(R_1%20+%20R_2)%20\cdot%20\omega_0%20\cdot%20Q_0}" alt="C2">
+</p>
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}C_1%20=%20\frac{(R_1%20+%20R_2)%20\cdot%20Q_0}{R_1%20\cdot%20R_2%20\cdot%20\omega_0}" alt="C1">
+</p>
 
 Quand les résistances sont inconnues :  
 Une contrainte est imposée :  
-![C_1_constraint](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_1%20%5Cgeq%204%20%5Ccdot%20Q_0%5E2%20%5Ccdot%20C_2)
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}C_1%20\geq%204%20\cdot%20Q_0^2%20\cdot%20C_2" alt="Constraint">
+</p>
 
 On obtient :  
-![R_1_plus_R_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20+%20R_2%20=%20%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D)  
-![R_1_times_R_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20%5Ccdot%20R_2%20=%20%5Cfrac%7B1%7D%7BC_1%20%5Ccdot%20C_2%20%5Ccdot%20%5Comega_0%5E2%7D)
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}R_1%20+%20R_2%20=%20\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}" alt="R1 + R2">
+</p>
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}R_1%20\cdot%20R_2%20=%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2}" alt="R1 * R2">
+</p>
 
 En résolvant :  
-![R_1](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20=%20%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D%20-%20R_2)  
-![R_2_equation](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_2%5E2%20-%20%5Cleft(%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D%5Cright)%20%5Ccdot%20R_2%20+%20%5Cfrac%7B1%7D%7BC_1%20%5Ccdot%20C_2%20%5Ccdot%20%5Comega_0%5E2%7D%20=%200)
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}R_1%20=%20\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}%20-%20R_2" alt="R1">
+</p>
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}R_2^2%20-%20\left(\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}\right)%20\cdot%20R_2%20+%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2}%20=%200" alt="Quadratic R2">
+</p>
 
 ---
 
 ## Passe Haut
 La fonction de transfert est donnée par :  
-![H(jw)](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20H(j%5Comega)%20=%20%5Cfrac%7BC_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D%7B1%20+%20j%5Comega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D)
-
-
-
-
-
-
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\color{white}H(j\omega)%20=%20\frac{C_1%20C_2%20R_1%20R_2(j\omega)^2}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2}" alt="H(jω)">
+</p>
 
 ### Installation
 
