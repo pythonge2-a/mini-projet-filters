@@ -113,82 +113,31 @@ poetry build
 # Butterworth
 
 ## Passe Bas
-La fonction de transfert est donnée par :
-$$
-\color{white} H(j\omega) = \frac{1}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
-$$
+La fonction de transfert est donnée par :  
+![H(jw)](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20H(j%5Comega)%20=%20%5Cfrac%7B1%7D%7B1%20+%20j%5Comega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D)
 
-Quand les condensateurs sont inconnus :
-$$
-\color{white} C_2 = \frac{1}{(R_1 + R_2) \cdot \omega_0 \cdot Q_0}
-$$
-$$
-\color{white} C_1 = \frac{(R_1 + R_2) \cdot Q_0}{R_1 \cdot R_2 \cdot \omega_0}
-$$
+Quand les condensateurs sont inconnus :  
+![C_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_2%20=%20%5Cfrac%7B1%7D%7B(R_1%20+%20R_2)%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D)  
+![C_1](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_1%20=%20%5Cfrac%7B(R_1%20+%20R_2)%20%5Ccdot%20Q_0%7D%7BR_1%20%5Ccdot%20R_2%20%5Ccdot%20%5Comega_0%7D)
 
 Quand les résistances sont inconnues :  
-Une contrainte est imposée :
-$$
-\color{white} C_1 \geq 4 \cdot Q_0^2 \cdot C_2
-$$
+Une contrainte est imposée :  
+![C_1_constraint](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20C_1%20%5Cgeq%204%20%5Ccdot%20Q_0%5E2%20%5Ccdot%20C_2)
 
-On obtient :
-$$
-\color{white} R_1 + R_2 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0}
-$$
-$$
-\color{white} R_1 \cdot R_2 = \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2}
-$$
-En résolvant :
-$$
-\color{white} R_1 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0} - R_2
-$$
-$$
-\color{white} R_2^2 - \left(\frac{1}{C_2 \cdot \omega_0 \cdot Q_0}\right) \cdot R_2 + \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2} = 0
-$$
-$$
-\color{white} R_2 = \text{solution du trinôme}
-$$
+On obtient :  
+![R_1_plus_R_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20+%20R_2%20=%20%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D)  
+![R_1_times_R_2](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20%5Ccdot%20R_2%20=%20%5Cfrac%7B1%7D%7BC_1%20%5Ccdot%20C_2%20%5Ccdot%20%5Comega_0%5E2%7D)
+
+En résolvant :  
+![R_1](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_1%20=%20%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D%20-%20R_2)  
+![R_2_equation](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20R_2%5E2%20-%20%5Cleft(%5Cfrac%7B1%7D%7BC_2%20%5Ccdot%20%5Comega_0%20%5Ccdot%20Q_0%7D%5Cright)%20%5Ccdot%20R_2%20+%20%5Cfrac%7B1%7D%7BC_1%20%5Ccdot%20C_2%20%5Ccdot%20%5Comega_0%5E2%7D%20=%200)
 
 ---
 
 ## Passe Haut
-La fonction de transfert est donnée par :
-$$
-\color{white} H(j\omega) = \frac{C_1 C_2 R_1 R_2 (j\omega)^2}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
-$$
+La fonction de transfert est donnée par :  
+![H(jw)](https://latex.codecogs.com/svg.latex?%5Ccolor%7Bwhite%7D%20H(j%5Comega)%20=%20%5Cfrac%7BC_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D%7B1%20+%20j%5Comega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j%5Comega)%5E2%7D)
 
-Quand les résistances sont inconnues :
-$$
-\color{white} R_1 = \frac{1}{(C_1 + C_2) \cdot \omega_0 \cdot Q_0}
-$$
-$$
-\color{white} R_2 = \frac{(C_1 + C_2) \cdot Q_0}{C_1 \cdot C_2 \cdot \omega_0}
-$$
-
-Quand les condensateurs sont inconnus :  
-Une contrainte est imposée :
-$$
-\color{white} R_2 \geq 4 \cdot Q_0^2 \cdot R_1
-$$
-
-On obtient :
-$$
-\color{white} C_1 + C_2 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0}
-$$
-$$
-\color{white} C_1 \cdot C_2 = \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2}
-$$
-En résolvant :
-$$
-\color{white} C_1 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0} - C_2
-$$
-$$
-\color{white} C_2^2 - \left(\frac{1}{R_1 \cdot \omega_0 \cdot Q_0}\right) \cdot C_2 + \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2} = 0
-$$
-$$
-\color{white} C_2 = \text{solution du trinôme}
-$$
 
 
 
