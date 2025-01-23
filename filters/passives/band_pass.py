@@ -2,7 +2,6 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class BandPassFilter:
     @staticmethod
     def bandpass_rc(resonant_frequency, bandwidth, resistance=None, capacitance=None):
