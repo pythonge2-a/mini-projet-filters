@@ -119,7 +119,7 @@ from filters.passives.low_pass import LowPassFilter
 ```
 On mentionne une valeur de résistance, donc "result" prendra la valeur du condensateur calculé, afin d'avoir une fréquence de coupure de 1000 Hz
 ```python
-    result = lowpass_filters.lowpass_rc(cutoff_frequency=1000,resistance=1000)
+result = lowpass_filters.lowpass_rc(cutoff_frequency=1000,resistance=1000)
 ```
 #### Filtre RLC
 
@@ -146,19 +146,19 @@ lowpass_filters.bode_plot(cutoff_frequency=1000,resistance=1000,inductance=1e-3,
 
 ## Commandes importantes
 
-### Exécution des tests
+#### Exécution des tests
 
 ```python
 pytest -v -s
 ```
 
-### Préparation de la distribution
+#### Préparation de la distribution
 
 ```python
 poetry build
 ```
 
-### Installation dans un autre répértoire
+#### Installation dans un autre répértoire
 
 ```python
 pip install filters-0.1.0-py3-none-any.whl
