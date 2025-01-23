@@ -5,5 +5,6 @@ class Filters:
     def get_snk(self):
         if self.snk is None:
             from .snk import SallenAndKey  # Import différé
+
             self.snk = SallenAndKey()
         return self.snk

@@ -1,6 +1,8 @@
 import unittest
-import numpy as np
-from filters.snk.tchebychev import TchebychevFilter  # <-- adaptez l'import selon votre structure
+from filters.snk.tchebychev import (
+    TchebychevFilter,
+)  # <-- adaptez l'import selon votre structure
+
 # Par exemple :
 # from filters.snk.tchebychev import TchebychevFilter
 
@@ -8,7 +10,7 @@ from filters.snk.tchebychev import TchebychevFilter  # <-- adaptez l'import selo
 class TestTchebychev(unittest.TestCase):
     def setUp(self):
         self.filter_designer = TchebychevFilter()
-        self.f = 2500.0     # Fréquence de coupure (Hz) pour les tests
+        self.f = 2500.0  # Fréquence de coupure (Hz) pour les tests
         self.tolerance = 0.1  # Tolérance absolue pour les comparaisons (en ohms)
 
     # ----------------------------------------------------------------
@@ -29,10 +31,7 @@ class TestTchebychev(unittest.TestCase):
 
         # 2) Construction du filtre
         tf_lp, stages_lp = self.filter_designer.design_filter(
-            order=order,
-            cutoff_freq=self.f,
-            filter_type="lowpass",
-            c_vals=capacitors
+            order=order, cutoff_freq=self.f, filter_type="lowpass", c_vals=capacitors
         )
         # On s'attend à une seule cellule (ordre 1 => q=0 => 1er ordre)
         self.assertEqual(len(stages_lp), 1)
@@ -44,8 +43,10 @@ class TestTchebychev(unittest.TestCase):
         # Valeur de référence
         expected_R = 3239.5
         self.assertAlmostEqual(
-            calculated_R, expected_R, delta=self.tolerance,
-            msg=f"R calculé={calculated_R} vs attendu={expected_R}"
+            calculated_R,
+            expected_R,
+            delta=self.tolerance,
+            msg=f"R calculé={calculated_R} vs attendu={expected_R}",
         )
 
     # ----------------------------------------------------------------
@@ -67,10 +68,7 @@ class TestTchebychev(unittest.TestCase):
 
         # Construction du filtre
         tf_lp, stages_lp = self.filter_designer.design_filter(
-            order=order,
-            cutoff_freq=self.f,
-            filter_type="lowpass",
-            c_vals=capacitors
+            order=order, cutoff_freq=self.f, filter_type="lowpass", c_vals=capacitors
         )
         # Il ne doit y avoir qu'une seule cellule (d'ordre 2)
         self.assertEqual(len(stages_lp), 1)
@@ -81,13 +79,21 @@ class TestTchebychev(unittest.TestCase):
         R2_calc = stage2_params["R2"]
 
         expected_resistances = {
-            "R1": 3169.4,   # Valeurs de référence
+            "R1": 3169.4,  # Valeurs de référence
             "R2": 11598.6,
         }
-        self.assertAlmostEqual(R1_calc, expected_resistances["R1"], delta=self.tolerance,
-                               msg=f"R1 calculé={R1_calc} vs attendu={expected_resistances['R1']}")
-        self.assertAlmostEqual(R2_calc, expected_resistances["R2"], delta=self.tolerance,
-                               msg=f"R2 calculé={R2_calc} vs attendu={expected_resistances['R2']}")
+        self.assertAlmostEqual(
+            R1_calc,
+            expected_resistances["R1"],
+            delta=self.tolerance,
+            msg=f"R1 calculé={R1_calc} vs attendu={expected_resistances['R1']}",
+        )
+        self.assertAlmostEqual(
+            R2_calc,
+            expected_resistances["R2"],
+            delta=self.tolerance,
+            msg=f"R2 calculé={R2_calc} vs attendu={expected_resistances['R2']}",
+        )
 
     # ----------------------------------------------------------------
     # Test de l'ordre 3 (passe-bas)
@@ -106,10 +112,7 @@ class TestTchebychev(unittest.TestCase):
 
         # Construction du filtre
         tf_lp, stages_lp = self.filter_designer.design_filter(
-            order=order,
-            cutoff_freq=self.f,
-            filter_type="lowpass",
-            c_vals=capacitors
+            order=order, cutoff_freq=self.f, filter_type="lowpass", c_vals=capacitors
         )
         # Pour un ordre 3: on a une cellule d'ordre 1 (q=0) + une cellule d'ordre 2
         self.assertEqual(len(stages_lp), 2)
@@ -118,7 +121,9 @@ class TestTchebychev(unittest.TestCase):
         R1 = stages_lp[0]["params"]["R"]
 
         # Stage 2 => 2e ordre => params = {"R1", "R2", "C1", "C2"}
-        R3 = stages_lp[1]["params"]["R1"]  # On l'appelle R3 pour coller aux "noms" attendus
+        R3 = stages_lp[1]["params"][
+            "R1"
+        ]  # On l'appelle R3 pour coller aux "noms" attendus
         R4 = stages_lp[1]["params"]["R2"]  # On l'appelle R4
 
         expected_resistances = {
@@ -126,12 +131,24 @@ class TestTchebychev(unittest.TestCase):
             "R3": 2109.6,
             "R4": 38647.3,
         }
-        self.assertAlmostEqual(R1, expected_resistances["R1"], delta=self.tolerance,
-                               msg=f"R1 calculé={R1} vs attendu={expected_resistances['R1']}")
-        self.assertAlmostEqual(R3, expected_resistances["R3"], delta=self.tolerance,
-                               msg=f"R3 calculé={R3} vs attendu={expected_resistances['R3']}")
-        self.assertAlmostEqual(R4, expected_resistances["R4"], delta=self.tolerance,
-                               msg=f"R4 calculé={R4} vs attendu={expected_resistances['R4']}")
+        self.assertAlmostEqual(
+            R1,
+            expected_resistances["R1"],
+            delta=self.tolerance,
+            msg=f"R1 calculé={R1} vs attendu={expected_resistances['R1']}",
+        )
+        self.assertAlmostEqual(
+            R3,
+            expected_resistances["R3"],
+            delta=self.tolerance,
+            msg=f"R3 calculé={R3} vs attendu={expected_resistances['R3']}",
+        )
+        self.assertAlmostEqual(
+            R4,
+            expected_resistances["R4"],
+            delta=self.tolerance,
+            msg=f"R4 calculé={R4} vs attendu={expected_resistances['R4']}",
+        )
 
     # ----------------------------------------------------------------
     # Test de l'ordre 4 (passe-haut)
@@ -151,10 +168,7 @@ class TestTchebychev(unittest.TestCase):
 
         # Construction du filtre
         tf_hp, stages_hp = self.filter_designer.design_filter(
-            order=order,
-            cutoff_freq=self.f,
-            filter_type="highpass",
-            c_vals=capacitors
+            order=order, cutoff_freq=self.f, filter_type="highpass", c_vals=capacitors
         )
         # Pour un ordre 4, on s'attend à 2 cellules d'ordre 2
         self.assertEqual(len(stages_hp), 2)
@@ -172,9 +186,13 @@ class TestTchebychev(unittest.TestCase):
             "R3": 1184.4,
             "R4": 67509.7,
         }
-        for (name, val) in zip(["R1", "R2", "R3", "R4"], [R1, R2, R3, R4]):
-            self.assertAlmostEqual(val, expected_resistances[name], delta=self.tolerance,
-                                   msg=f"{name} calculé={val} vs attendu={expected_resistances[name]}")
+        for name, val in zip(["R1", "R2", "R3", "R4"], [R1, R2, R3, R4]):
+            self.assertAlmostEqual(
+                val,
+                expected_resistances[name],
+                delta=self.tolerance,
+                msg=f"{name} calculé={val} vs attendu={expected_resistances[name]}",
+            )
 
     # ----------------------------------------------------------------
     # Test de l'ordre 5 (passe-bas)
@@ -193,10 +211,7 @@ class TestTchebychev(unittest.TestCase):
 
         # Construction du filtre (passe-bas)
         tf_lp, stages_lp = self.filter_designer.design_filter(
-            order=order,
-            cutoff_freq=self.f,
-            filter_type="lowpass",
-            c_vals=capacitors
+            order=order, cutoff_freq=self.f, filter_type="lowpass", c_vals=capacitors
         )
         # Ordre 5 => une cellule d'ordre 1 + deux cellules d'ordre 2
         self.assertEqual(len(stages_lp), 3)
@@ -219,10 +234,14 @@ class TestTchebychev(unittest.TestCase):
             "R6": 106749.2,
         }
 
-        for (name, val) in zip(["R1", "R3", "R4", "R5", "R6"],
-                               [R1, R3, R4, R5, R6]):
-            self.assertAlmostEqual(val, expected_resistances[name], delta=self.tolerance,
-                                   msg=f"{name} calculé={val} vs attendu={expected_resistances[name]}")
+        for name, val in zip(["R1", "R3", "R4", "R5", "R6"], [R1, R3, R4, R5, R6]):
+            self.assertAlmostEqual(
+                val,
+                expected_resistances[name],
+                delta=self.tolerance,
+                msg=f"{name} calculé={val} vs attendu={expected_resistances[name]}",
+            )
+
 
 # -------------------------------------------------------------------
 # Lance tous les tests
