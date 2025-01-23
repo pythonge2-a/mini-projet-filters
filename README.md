@@ -110,9 +110,29 @@ poetry build
 
 ## Calculs utilisés
 
-<p align="center">
-  <img width="601" alt="image" src="https://github.com/user-attachments/assets/e98e8ecd-fdd6-49ce-b68f-45e33dc9e83e" />
-</p>
+Butterworth
+#### Passe Bas
+La fonction de transfert est donnée par :
+
+![Equation](https://latex.codecogs.com/svg.latex?H(j\omega)%20=%20\frac{1}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2})
+
+Quand les condensateurs sont inconnus :
+![Equation](https://latex.codecogs.com/svg.latex?C_2%20=%20\frac{1}{(R_1%20+%20R_2)%20\cdot%20\omega_0%20\cdot%20Q_0})
+![Equation](https://latex.codecogs.com/svg.latex?C_1%20=%20\frac{(R_1%20+%20R_2)%20\cdot%20Q_0}{R_1%20\cdot%20R_2%20\cdot%20\omega_0})
+
+Quand les résistances sont inconnues :
+Une contrainte est imposée :
+![Equation](https://latex.codecogs.com/svg.latex?C_1%20\geq%204%20\cdot%20Q_0^2%20\cdot%20C_2)
+
+On obtient :
+![Equation](https://latex.codecogs.com/svg.latex?R_1%20+%20R_2%20=%20\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0})
+![Equation](https://latex.codecogs.com/svg.latex?R_1%20\cdot%20R_2%20=%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2})
+
+#### Passe Haut
+La fonction de transfert est donnée par :
+
+![Equation](https://latex.codecogs.com/svg.latex?H(j\omega)%20=%20\frac{C_1%20C_2%20R_1%20R_2(j\omega)^2}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2})
+
 
 
 
