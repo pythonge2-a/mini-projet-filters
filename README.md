@@ -108,6 +108,12 @@ pytest -v -s
 poetry build
 ```
 
+### Installation dans un autre répértoire
+
+```python
+pip install filters-0.1.0-py3-none-any.whl
+```
+
 ## Calculs utilisés
 
 Voici un exemple de comment on isole les paramètres qui nous intéresse, afin de les calculer.
@@ -127,8 +133,7 @@ Quand les condensateurs sont inconnus :
   <img src="https://latex.codecogs.com/svg.latex?\color{white}C_1%20=%20\frac{(R_1%20+%20R_2)%20\cdot%20Q_0}{R_1%20\cdot%20R_2%20\cdot%20\omega_0}" alt="C1">
 </p>
 
-Quand les résistances sont inconnues :  
-Une contrainte est imposée :  
+Quand les résistances sont inconnues, une contrainte est imposée :  
 <p align="center">
   <img src="https://latex.codecogs.com/svg.latex?\color{white}C_1%20\geq%204%20\cdot%20Q_0^2%20\cdot%20C_2" alt="Constraint">
 </p>
@@ -141,7 +146,7 @@ On obtient :
   <img src="https://latex.codecogs.com/svg.latex?\color{white}R_1%20\cdot%20R_2%20=%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2}" alt="R1 * R2">
 </p>
 
-En résolvant :  
+En résolvant :
 <p align="center">
   <img src="https://latex.codecogs.com/svg.latex?\color{white}R_1%20=%20\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}%20-%20R_2" alt="R1">
 </p>
@@ -149,19 +154,12 @@ En résolvant :
   <img src="https://latex.codecogs.com/svg.latex?\color{white}R_2^2%20-%20\left(\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0}\right)%20\cdot%20R_2%20+%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2}%20=%200" alt="Quadratic R2">
 </p>
 
----
-
 ## Passe Haut
 La fonction de transfert est donnée par :  
 <p align="center">
   <img src="https://latex.codecogs.com/svg.latex?\color{white}H(j\omega)%20=%20\frac{C_1%20C_2%20R_1%20R_2(j\omega)^2}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2}" alt="H(jω)">
 </p>
 
-### Installation
-
-```python
-pip install filters-0.1.0-py3-none-any.whl
-```
 
 ## Références
 Support de cours _Electronique analogique 2_ du département TIN, rédigé par Monsieur Blaise Grandjean
