@@ -110,28 +110,85 @@ poetry build
 
 ## Calculs utilisés
 
-Butterworth
-#### Passe Bas
-La fonction de transfert est donnée par :
+# Butterworth
 
-![Equation](https://latex.codecogs.com/svg.latex?H(j\omega)%20=%20\frac{1}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2})
+## Passe Bas
+La fonction de transfert est donnée par :
+$$
+\color{white} H(j\omega) = \frac{1}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
+$$
 
 Quand les condensateurs sont inconnus :
-![Equation](https://latex.codecogs.com/svg.latex?C_2%20=%20\frac{1}{(R_1%20+%20R_2)%20\cdot%20\omega_0%20\cdot%20Q_0})
-![Equation](https://latex.codecogs.com/svg.latex?C_1%20=%20\frac{(R_1%20+%20R_2)%20\cdot%20Q_0}{R_1%20\cdot%20R_2%20\cdot%20\omega_0})
+$$
+\color{white} C_2 = \frac{1}{(R_1 + R_2) \cdot \omega_0 \cdot Q_0}
+$$
+$$
+\color{white} C_1 = \frac{(R_1 + R_2) \cdot Q_0}{R_1 \cdot R_2 \cdot \omega_0}
+$$
 
-Quand les résistances sont inconnues :
+Quand les résistances sont inconnues :  
 Une contrainte est imposée :
-![Equation](https://latex.codecogs.com/svg.latex?C_1%20\geq%204%20\cdot%20Q_0^2%20\cdot%20C_2)
+$$
+\color{white} C_1 \geq 4 \cdot Q_0^2 \cdot C_2
+$$
 
 On obtient :
-![Equation](https://latex.codecogs.com/svg.latex?R_1%20+%20R_2%20=%20\frac{1}{C_2%20\cdot%20\omega_0%20\cdot%20Q_0})
-![Equation](https://latex.codecogs.com/svg.latex?R_1%20\cdot%20R_2%20=%20\frac{1}{C_1%20\cdot%20C_2%20\cdot%20\omega_0^2})
+$$
+\color{white} R_1 + R_2 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0}
+$$
+$$
+\color{white} R_1 \cdot R_2 = \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2}
+$$
+En résolvant :
+$$
+\color{white} R_1 = \frac{1}{C_2 \cdot \omega_0 \cdot Q_0} - R_2
+$$
+$$
+\color{white} R_2^2 - \left(\frac{1}{C_2 \cdot \omega_0 \cdot Q_0}\right) \cdot R_2 + \frac{1}{C_1 \cdot C_2 \cdot \omega_0^2} = 0
+$$
+$$
+\color{white} R_2 = \text{solution du trinôme}
+$$
 
-#### Passe Haut
+---
+
+## Passe Haut
 La fonction de transfert est donnée par :
+$$
+\color{white} H(j\omega) = \frac{C_1 C_2 R_1 R_2 (j\omega)^2}{1 + j\omega (R_1 + R_2) + C_1 C_2 R_1 R_2 (j\omega)^2}
+$$
 
-![Equation](https://latex.codecogs.com/svg.latex?H(j\omega)%20=%20\frac{C_1%20C_2%20R_1%20R_2(j\omega)^2}{1%20+%20j\omega(R_1%20+%20R_2)%20+%20C_1%20C_2%20R_1%20R_2(j\omega)^2})
+Quand les résistances sont inconnues :
+$$
+\color{white} R_1 = \frac{1}{(C_1 + C_2) \cdot \omega_0 \cdot Q_0}
+$$
+$$
+\color{white} R_2 = \frac{(C_1 + C_2) \cdot Q_0}{C_1 \cdot C_2 \cdot \omega_0}
+$$
+
+Quand les condensateurs sont inconnus :  
+Une contrainte est imposée :
+$$
+\color{white} R_2 \geq 4 \cdot Q_0^2 \cdot R_1
+$$
+
+On obtient :
+$$
+\color{white} C_1 + C_2 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0}
+$$
+$$
+\color{white} C_1 \cdot C_2 = \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2}
+$$
+En résolvant :
+$$
+\color{white} C_1 = \frac{1}{R_1 \cdot \omega_0 \cdot Q_0} - C_2
+$$
+$$
+\color{white} C_2^2 - \left(\frac{1}{R_1 \cdot \omega_0 \cdot Q_0}\right) \cdot C_2 + \frac{1}{R_1 \cdot R_2 \cdot \omega_0^2} = 0
+$$
+$$
+\color{white} C_2 = \text{solution du trinôme}
+$$
 
 
 
