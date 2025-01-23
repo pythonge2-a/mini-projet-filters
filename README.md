@@ -32,8 +32,8 @@ La conception de filtres requièrent de longs calculs chronophages et qui s'oubl
 - Composants connus (résistances ou condensateurs)
 
 et en retour le code va calculer les valeurs de composants qui lui permettent d'avoir le filtre désiré.
-\Condensateurs en entrée  --->  valeurs des résistances en sortie
-\Résistances en entrée    --->  valeurs des condensateurs en sortie
+- Condensateurs en entrée  --->  valeurs des résistances en sortie
+- Résistances en entrée    --->  valeurs des condensateurs en sortie
 
 ### Structure
 Notre bibliothèque se découpera sous la forme de fonctions.
@@ -115,4 +115,4 @@ pip install filters-0.1.0-py3-none-any.whl
 ```
 
 ## Références
-Support de cours _Electronique analogique_ du département TIN, rédigé par Monsieur Blaise Grandjean
+Support de cours _Electronique analogique 2_ du département TIN, rédigé par Monsieur Blaise Grandjean
