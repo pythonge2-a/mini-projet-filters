@@ -108,6 +108,14 @@ pytest -v -s
 poetry build
 ```
 
+## Calculs utilisés
+
+<p align="center">
+  ![image](https://github.com/user-attachments/assets/d1d7d270-32a8-4389-84a8-2cbc7d3fd297)
+</p>
+
+
+
 ### Installation
 
 ```python
