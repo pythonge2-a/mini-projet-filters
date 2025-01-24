@@ -81,6 +81,14 @@ On indique les valeurs de résistances :
 ```python
 r_vals = [1000,10000,1000,10000]
 ```
+Si ordre impaire pour bessel (3 par exemple) alors il faut mettre dans r_vals ou c_vals un zéro
+```python
+r_vals = [1000,0,1000,10000]
+```
+Vu que nous avons fait par couple de deux élements (R1,R2) ou (C1,C2) alors si ordre impair
+nous avons une snk du premier ordre qui a une résistance et une capacité et une snk du deuxième ordre
+avec deux résistances et deux capacités
+
 Le filtre voulu est un ordre 1 avec une fréquence de coupure de 1000 Hz
 ```python
 highpass_test.graphs(order =1, cutoff_freq=1000,r_vals=r_vals)
@@ -134,7 +142,6 @@ if name == "main":
     main()
 ```
 ##### Détail du code
-
 On importe la fonction qui nous intéresse de la même manière que le code précédent
 ```python
 from filters.passives.low_pass import LowPassFilter
